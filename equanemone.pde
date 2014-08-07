@@ -18,6 +18,7 @@ PApplet parent = this;
 
 Class[] plugins = {
   //TestEquan.class,
+  Lava.class,
   Raindrops.class,
   Fire.class,
   Sweeps.class,
