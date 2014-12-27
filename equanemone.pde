@@ -25,6 +25,7 @@ Class[] plugins = {
   //TestEquan.class,
   //Noise.class,
 
+  NewYears.class,
   Lava.class,
   Raindrops.class,
   Fire.class,
