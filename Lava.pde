@@ -16,7 +16,7 @@ class Lava extends EquanPlugin {
     for (float i = 0; i < w; i++) {
       for (float j = 0; j < d; j++) {
         for (float k = 0; k < h; k++) {
-            if (noise(noiseOffset + i/w, j/d, k/h) > THRESHOLD) {
+            if (noise(noiseOffset + j/d, i/w, k/h) > THRESHOLD) {
               float hue = noise(i/w/4, noiseOffset/4 + j/d/4, k/h/4) * 1.5;
               if (hue > 1) {
                 hue -= 1;

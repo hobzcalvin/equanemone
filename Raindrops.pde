@@ -24,13 +24,13 @@ class Raindrops extends EquanPlugin {
         for (int i = 0; i < h; i++) {
           synchronized(c) {
             c.beginDraw();
-            c.set(a, i + b*h, color(0, 0, 255));
+            c.set(a, i + b*h, blue);
             c.endDraw();
           }
           slp(7);
           synchronized(c) {
             c.beginDraw();
-            c.set(a, i + b*h, color(0));
+            c.set(a, i + b*h, black);
             c.endDraw();
           }
         }
@@ -45,11 +45,16 @@ class Raindrops extends EquanPlugin {
   }
   
   Dropper drops[];
+  color blue, black;
 
   public Raindrops(int wd, int ht, int dp) {
     super(wd, ht, dp);
     
     needsFadeIn = false;
+    
+    c.colorMode(RGB, 255);
+    blue = color(0, 0, 255);
+    black = color(0, 0, 0);
     
     drops = new Dropper[w*d];
     for (int i = 0; i < w; i++) {
