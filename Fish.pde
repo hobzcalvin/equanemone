@@ -94,7 +94,9 @@ class Fish extends EquanPlugin {
   }
   
   synchronized void finish() {
-    mov.stop();
+    for (int i = 0; i < files.length; i++) {
+      movs[i].stop();
+    }
   }
 
 }
