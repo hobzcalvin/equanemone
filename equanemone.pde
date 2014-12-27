@@ -18,6 +18,8 @@ PApplet parent = this;
 
 Class[] plugins = {
   //TestEquan.class,
+  //Noise.class,
+
   Lava.class,
   Raindrops.class,
   Fire.class,
@@ -33,23 +35,33 @@ Class[] plugins = {
 PGraphics bg;
 EquanPlugin curPlugin;
 int nextPluginIndex = 0;
+int numRecords = 0;
 long startTime;
 
+boolean SPHERE = true;
+float SPHERE_TOP_RADIUS = 6;
+float SPHERE_TOTAL_RADIUS = 42;
+
 int FADE_TIME = 1500;
-int PLUGIN_TIME = 30000;
+int PLUGIN_TIME = 10000;
+float CYL_DIA = 2.5;
+float CYL_HEIGHT = SPHERE ? 2: 1.23;
+int CYL_DETAIL = 8;
+float STRAND_SPACING = 12;
 
 boolean modeCycle = true;
 boolean recording = true;
 
+PShape cyl;
 
 void setup() {
-  size(600, 400, P3D);
-  registry = new DeviceRegistry();
+  size(1024, 768, P3D);
+  //registry = new DeviceRegistry();
   testObserver = new TestObserver();
-  registry.addObserver(testObserver);
-  registry.setAntiLog(true);
+  //registry.addObserver(testObserver);
+  //registry.setAntiLog(true);
 
-  background(#7f7f7f);
+  background(50, 50, 50);
   colorMode(RGB, 255, 255, 255, 1);
 
   bg = createGraphics(NUM_STRIPS, PIX_PER_STRAND*STRANDS_PER_STRIP, JAVA2D);
@@ -62,6 +74,26 @@ void setup() {
   nextPluginIndex = 0;
   
   startTime = millis();
+  
+  cyl = makeCyl(CYL_DIA/2, CYL_DIA/2, CYL_HEIGHT, CYL_DETAIL);
+}
+
+int dragStartX;
+int dragStartY;
+float dragPosX = 0;
+float dragPosY = 0;
+float oldDPX;
+float oldDPY;
+void mousePressed() {
+  dragStartX = mouseX;
+  dragStartY = mouseY;
+  oldDPX = dragPosX;
+  oldDPY = dragPosY;
+}
+void mouseDragged() {
+  dragPosX = oldDPX + (float)(mouseX - dragStartX)/width;
+  dragPosY = oldDPY + (float)(mouseY - dragStartY)/height;
+  //println("DP: " + dragPosX + ", " + dragPosY);
 }
 
 void pasteCanvas(PGraphics can) {
@@ -87,6 +119,8 @@ int CORR_G = 100;
 int CORR_B = 100;*/
 
 void draw() {
+  background(0, 0, 0);
+
   long ms = millis();
   
   if (curPlugin == null && ms < startTime + 2000) {
@@ -103,8 +137,10 @@ void draw() {
         curPlugin.finish();
       }
       if (recording && curPlugin != null && nextPluginIndex == 0) {
-        // Full loop: stop
-        exit();
+        if (numRecords++ == 5) {
+          // Full loop: stop
+          exit();
+        }
       }
       curPlugin = (EquanPlugin)plugins[nextPluginIndex].getConstructors()[0]
           .newInstance(this, NUM_STRIPS, PIX_PER_STRAND, STRANDS_PER_STRIP);
@@ -125,6 +161,10 @@ void draw() {
   
   noTint();
   pasteCanvas(bg);
+  
+  fill(128, 128, 128);
+  rect(0, 0, bg.width*PIX_PER_STRAND/STRANDS_PER_STRIP*2 + 20, bg.height*2 + 10);
+  
   if (curPlugin.needsFadeIn && ms < startTime + FADE_TIME) {
     // Fade in
     float alpha = 1.0 - (float)(startTime + FADE_TIME - ms) / FADE_TIME;
@@ -143,50 +183,7 @@ void draw() {
   
   scrapeit();
   
-  /*long ms = millis();
-  if (curPlugin != null) {
-    curPlugin.draw();
-  }
-  if (nextPlugin != null) {
-    nextPlugin.draw();
-  }
-  
-  if (ms > nextTransition - FADE_TIME) {
-    float curAlpha =
-      max(float(ms - (nextTransition - FADE_TIME)) / FADE_TIME, 1);
-    println("CUR", curAlpha);
-    tint(255, 1);
-  } else {
-    noTint();
-  }
-  pasteCanvas(curPlugin.c);
-  if (ms > nextTransition - FADE_TIME) {
-    float curAlpha =
-      max(float(ms - (nextTransition - FADE_TIME)) / FADE_TIME, 1);
-    println("CUR", curAlpha);
-    tint(255, 1);
-  }
-  pasteCanvas(curPlugin.c);
-  
-  
-  
-  
-  
-  
-  if (curPlugin == null) {
-    return;
-  }
-  
-  curPlugin.draw();
 
-
-  scrapeit();
-  
-  if (millis() > target) {
-    println("TARGET!!!!!!!!!");
-    curPlugin.finish();
-    curPlugin = null;
-  }*/
 }
 
 void scrapeit() {
@@ -207,8 +204,93 @@ void scrapeit() {
         }
       }
     }
+  } else if (curPlugin != null) {
+    String s = dragPosX + ", " + dragPosY;
+    fill(255);
+    text(s, 0, height - 20);
+    
+    ambientLight(40, 40, 40);
+    ambient(255, 255, 255);
+    directionalLight(40, 40, 40, 0, 0, -1);
+    lightFalloff(1, 0, 0);
+    lightSpecular(0, 0, 0);
+    shapeMode(CENTER);
+    
+    if (SPHERE) {
+      //float SPHERE_TOP_RADIUS = 6;
+      //float SPHERE_TOTAL_RADIUS = 42;
+
+      // Global transform of everything drawn below
+      translate(width * 0.374, height * 0.505);
+      scale(8, 8, 8);
+      translate(20, 0);
+      rotateY(dragPosX * PI * 2);
+      rotateX(dragPosY * -PI);
+
+
+      for (int i = 0; i < NUM_STRIPS; i++) {
+        for (int j = 0; j < STRANDS_PER_STRIP; j++) {
+          for (int k = 0; k < PIX_PER_STRAND; k++) {
+            // -20 to 20
+            float lat = ((float)k/(PIX_PER_STRAND-1) - 0.5) * PI * 0.7;//k - PIX_PER_STRAND/2 + 0.5;
+            // 0 to 15
+            float lng = (float)(i * STRANDS_PER_STRIP + j)/(STRANDS_PER_STRIP*NUM_STRIPS) * PI * 2;
+            emissive(curPlugin.c.get(j, k + i*PIX_PER_STRAND));
+            pushMatrix();
+              // Set longitude
+              rotateY(lng);
+              // Account for central cylinder,
+              translate(SPHERE_TOP_RADIUS, 0, 0);
+              // Set latitude,
+              rotateZ(lat);
+              // Draw at equator,
+              translate(SPHERE_TOTAL_RADIUS - SPHERE_TOP_RADIUS, 0, 0);
+              shape(cyl);
+            popMatrix();
+          }
+        }
+      }
+    } else {
+      // Global transform of everything drawn below
+      translate(width * 0.374, height * 0.505);
+      scale(8, 8, 8);
+      translate(width * dragPosX, height * dragPosY);
+      rotateY(-0.05 * -PI * 2);
+      rotateX(0.05 * -PI);
+      
+      for (int i = 0; i < NUM_STRIPS; i++) {
+        for (int j = 0; j < STRANDS_PER_STRIP; j++) {
+          for (int k = 0; k < PIX_PER_STRAND; k++) {
+            emissive(curPlugin.c.get(j, k + i*PIX_PER_STRAND));
+            pushMatrix();
+              translate(i*STRAND_SPACING, CYL_HEIGHT * k, j*STRAND_SPACING);
+              shape(cyl);
+            popMatrix();
+          }
+        }
+      }
+    }
   }
 }
+
+
+PShape makeCyl(float topRadius, float bottomRadius, float tall, int sides) {
+  PShape s = createShape();
+  float angle = 0;
+  float angleIncrement = TWO_PI / sides;
+  s.beginShape(QUAD_STRIP);
+  s.noStroke();
+  for (int i = 0; i < sides + 1; ++i) {
+    s.vertex(topRadius*cos(angle), 0, topRadius*sin(angle));
+    s.vertex(bottomRadius*cos(angle), tall, bottomRadius*sin(angle));
+    angle += angleIncrement;
+  }
+  s.endShape();
+  s.disableStyle();
+  return s;
+}
+
+
 
 
 void unuzed() {
