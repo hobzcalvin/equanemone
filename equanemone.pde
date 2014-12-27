@@ -7,10 +7,15 @@ import com.heroicrobot.dropbit.devices.pixelpusher.*;
 import processing.core.*;
 import java.util.*;
 
+boolean SPHERE = true;
 
 int PIX_PER_STRAND = 40;
 int STRANDS_PER_STRIP = 4;
 int NUM_STRIPS = 4;
+// Ratio of pixel x distance over pixel y distance
+int WH_CORRECT = 10;
+
+int WIDTH, HEIGHT, DEPTH;
 
 DeviceRegistry registry;
 TestObserver testObserver;
@@ -38,7 +43,6 @@ int nextPluginIndex = 0;
 int numRecords = 0;
 long startTime;
 
-boolean SPHERE = true;
 float SPHERE_TOP_RADIUS = 6;
 float SPHERE_TOTAL_RADIUS = 42;
 
@@ -55,6 +59,16 @@ boolean recording = true;
 PShape cyl;
 
 void setup() {
+  if (SPHERE) {
+    WIDTH = STRANDS_PER_STRIP * NUM_STRIPS;
+    HEIGHT = PIX_PER_STRAND;
+    DEPTH = 1;
+  } else {
+    WIDTH = NUM_STRIPS;
+    HEIGHT = PIX_PER_STRAND;
+    DEPTH = STRANDS_PER_STRIP;
+  }
+  
   size(1024, 768, P3D);
   //registry = new DeviceRegistry();
   testObserver = new TestObserver();
@@ -64,7 +78,7 @@ void setup() {
   background(50, 50, 50);
   colorMode(RGB, 255, 255, 255, 1);
 
-  bg = createGraphics(NUM_STRIPS, PIX_PER_STRAND*STRANDS_PER_STRIP, JAVA2D);
+  bg = createGraphics(WIDTH, HEIGHT*DEPTH, JAVA2D);
   bg.beginDraw();
   bg.background(0);
   bg.endDraw();
@@ -99,9 +113,13 @@ void mouseDragged() {
 void pasteCanvas(PGraphics can) {
   PImage c = can.get();
   image(c, 0, 0);
-  image(c, c.width*2, 0,
-        c.width*PIX_PER_STRAND/STRANDS_PER_STRIP*2, 
-        c.height*2);
+  // No need for this when we have 3D! Right?
+  /*image(c, c.width + 10, 0,
+        c.width*2*WH_CORRECT,
+        c.height*2);*/
+  //noFill();
+  //stroke(128, 128, 128);
+  // Could do more stuff here to outline the draw areas, but who cares?
   /*noStroke();
   for (int i = 0; i < c.width; i++) {
     for (int j = 0; j < c.height; j++) {
@@ -143,7 +161,7 @@ void draw() {
         }
       }
       curPlugin = (EquanPlugin)plugins[nextPluginIndex].getConstructors()[0]
-          .newInstance(this, NUM_STRIPS, PIX_PER_STRAND, STRANDS_PER_STRIP);
+          .newInstance(this, WIDTH, HEIGHT, DEPTH);
       startTime = ms;
     } catch (Exception e) {
       println("Exception starting plugin", e);
@@ -162,8 +180,8 @@ void draw() {
   noTint();
   pasteCanvas(bg);
   
-  fill(128, 128, 128);
-  rect(0, 0, bg.width*PIX_PER_STRAND/STRANDS_PER_STRIP*2 + 20, bg.height*2 + 10);
+  //fill(128, 128, 128);
+  //rect(0, 0, bg.width*HEIGHT/DEPTH*2 + 20, bg.height*2 + 10);
   
   if (curPlugin.needsFadeIn && ms < startTime + FADE_TIME) {
     // Fade in
@@ -196,18 +214,27 @@ void scrapeit() {
       pushers.get(0).startRecording("canned.dat");
     }
     
-    for (int i = 0; i < strips.size(); i++) {
+    if (strips.size() != NUM_STRIPS) {
+      println("strips.size() != NUM_STRIPS; THAT'S BAD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    }
+    for (int i = 0; i < NUM_STRIPS; i++) {
       Strip s = strips.get(i);
       for (int j = 0; j < STRANDS_PER_STRIP; j++) {
         for (int k = 0; k < PIX_PER_STRAND; k++) {
-          s.setPixel(get(j, k + i*PIX_PER_STRAND), k + (STRANDS_PER_STRIP-1-j)*PIX_PER_STRAND);
+          color c;
+          if (SPHERE) {
+            c = get(i*STRANDS_PER_STRIP + j, k);
+          } else {
+            c = get(j, k + i*PIX_PER_STRAND);
+          }
+          s.setPixel(c, k + (STRANDS_PER_STRIP-1-j)*PIX_PER_STRAND);
         }
       }
     }
   } else if (curPlugin != null) {
-    String s = dragPosX + ", " + dragPosY;
+    /*String s = dragPosX + ", " + dragPosY;
     fill(255);
-    text(s, 0, height - 20);
+    text(s, 0, height - 20);*/
     
     ambientLight(40, 40, 40);
     ambient(255, 255, 255);
@@ -228,26 +255,24 @@ void scrapeit() {
       rotateX(dragPosY * -PI);
 
 
-      for (int i = 0; i < NUM_STRIPS; i++) {
-        for (int j = 0; j < STRANDS_PER_STRIP; j++) {
-          for (int k = 0; k < PIX_PER_STRAND; k++) {
-            // -20 to 20
-            float lat = ((float)k/(PIX_PER_STRAND-1) - 0.5) * PI * 0.7;//k - PIX_PER_STRAND/2 + 0.5;
-            // 0 to 15
-            float lng = (float)(i * STRANDS_PER_STRIP + j)/(STRANDS_PER_STRIP*NUM_STRIPS) * PI * 2;
-            emissive(curPlugin.c.get(j, k + i*PIX_PER_STRAND));
-            pushMatrix();
-              // Set longitude
-              rotateY(lng);
-              // Account for central cylinder,
-              translate(SPHERE_TOP_RADIUS, 0, 0);
-              // Set latitude,
-              rotateZ(lat);
-              // Draw at equator,
-              translate(SPHERE_TOTAL_RADIUS - SPHERE_TOP_RADIUS, 0, 0);
-              shape(cyl);
-            popMatrix();
-          }
+      for (int i = 0; i < WIDTH; i++) {
+        for (int k = 0; k < HEIGHT; k++) {
+          // -20 to 20
+          float lat = ((float)k/(HEIGHT-1) - 0.5) * PI * 0.7;
+          // 0 to 15
+          float lng = (float)i/WIDTH * PI * 2;
+          emissive(curPlugin.c.get(i, k));
+          pushMatrix();
+            // Set longitude
+            rotateY(lng);
+            // Account for central cylinder,
+            translate(SPHERE_TOP_RADIUS, 0, 0);
+            // Set latitude,
+            rotateZ(lat);
+            // Draw at equator,
+            translate(SPHERE_TOTAL_RADIUS - SPHERE_TOP_RADIUS, 0, 0);
+            shape(cyl);
+          popMatrix();
         }
       }
     } else {
@@ -258,10 +283,10 @@ void scrapeit() {
       rotateY(-0.05 * -PI * 2);
       rotateX(0.05 * -PI);
       
-      for (int i = 0; i < NUM_STRIPS; i++) {
-        for (int j = 0; j < STRANDS_PER_STRIP; j++) {
-          for (int k = 0; k < PIX_PER_STRAND; k++) {
-            emissive(curPlugin.c.get(j, k + i*PIX_PER_STRAND));
+      for (int i = 0; i < WIDTH; i++) {
+        for (int j = 0; j < DEPTH; j++) {
+          for (int k = 0; k < HEIGHT; k++) {
+            emissive(curPlugin.c.get(j, k + i*HEIGHT));
             pushMatrix();
               translate(i*STRAND_SPACING, CYL_HEIGHT * k, j*STRAND_SPACING);
               shape(cyl);
@@ -308,8 +333,8 @@ void unuzed() {
   Plane base = Plane.XZ;
   
   colorMode(RGB, 1, 1, 1, 1);
-  for (int x = 0; x < STRANDS_PER_STRIP; x++) {
-    for (int y = 0; y < PIX_PER_STRAND; y++) {
+  for (int x = 0; x < DEPTH; x++) {
+    for (int y = 0; y < HEIGHT; y++) {
       for (int z = 0; z < 4; z++) {
         color c = color(0, 0, 0, 1);
         
@@ -333,7 +358,7 @@ void unuzed() {
           c = color(part, part, 0, 1);
         }
         
-        set(x, y + z*PIX_PER_STRAND, c);
+        set(x, y + z*HEIGHT, c);
       }
     }
   }
