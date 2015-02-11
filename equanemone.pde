@@ -7,11 +7,11 @@ import com.heroicrobot.dropbit.devices.pixelpusher.*;
 import processing.core.*;
 import java.util.*;
 
-boolean SPHERE = true;
+boolean SPHERE = false;
 
 int PIX_PER_STRAND = 40;
-int STRANDS_PER_STRIP = 4;
-int NUM_STRIPS = 4;
+int STRANDS_PER_STRIP = 8;
+int NUM_STRIPS = 8;
 // Ratio of pixel x distance over pixel y distance
 int WH_CORRECT = 10;
 
@@ -25,16 +25,17 @@ Class[] plugins = {
   //TestEquan.class,
   //Noise.class,
 
-  NewYears.class,
-  Lava.class,
-  Raindrops.class,
+  Sphere.class,
+  //NewYears.class,
+  //Terrain.class,
   Fire.class,
-  Sweeps.class,
-  Fireflies.class,
-  Planes.class,
-  Fish.class,
   UpDown.class,
-  Terrain.class,
+  Sweeps.class,
+  Planes.class,
+  //Raindrops.class,
+  Lava.class,
+  //Fireflies.class,
+  Fish.class,
 };
 
   
@@ -54,10 +55,12 @@ float CYL_HEIGHT = SPHERE ? 2: 1.23;
 int CYL_DETAIL = 8;
 float STRAND_SPACING = 12;
 
-boolean modeCycle = true;
-boolean recording = true;
+boolean modeCycle = false;
+boolean recording = false;
 
 PShape cyl;
+//PShape woman;
+boolean clicked = false;
 
 void setup() {
   if (SPHERE) {
@@ -70,11 +73,13 @@ void setup() {
     DEPTH = STRANDS_PER_STRIP;
   }
   
-  size(1024, 768, P3D);
-  //registry = new DeviceRegistry();
+  size(1280, 800, P3D);
+  registry = new DeviceRegistry();
   testObserver = new TestObserver();
-  //registry.addObserver(testObserver);
-  //registry.setAntiLog(true);
+  registry.addObserver(testObserver);
+  registry.setAntiLog(true);
+  
+  //woman = loadShape("scylla_2064/scylla_2064.obj");
 
   background(50, 50, 50);
   colorMode(RGB, 255, 255, 255, 1);
@@ -93,22 +98,39 @@ void setup() {
   cyl = makeCyl(CYL_DIA/2, CYL_DIA/2, CYL_HEIGHT, CYL_DETAIL);
 }
 
-int dragStartX;
-int dragStartY;
-float dragPosX = 0;
-float dragPosY = 0;
-float oldDPX;
-float oldDPY;
+int lastX;
+int lastY;
+float mainPosX = 0;
+float mainPosY = 0;
+float shiftPosX = 0;
+float shiftPosY = 0;
+float altPosX = 0;
+float altPosY = 0;
 void mousePressed() {
-  dragStartX = mouseX;
-  dragStartY = mouseY;
-  oldDPX = dragPosX;
-  oldDPY = dragPosY;
+  lastX = mouseX;
+  lastY = mouseY;
 }
 void mouseDragged() {
-  dragPosX = oldDPX + (float)(mouseX - dragStartX)/width;
-  dragPosY = oldDPY + (float)(mouseY - dragStartY)/height;
+  float xmove = (float)(mouseX - lastX) / width;
+  float ymove = (float)(mouseY - lastY) / height;
+  mousePressed();
+  
+  if (keyPressed) {
+    shiftPosX += xmove;
+    shiftPosY += ymove;
+  } else if (false && keyCode == ALT) {
+    altPosX += xmove;
+    altPosY += ymove;
+  } else {
+    mainPosX += xmove;
+    mainPosY += ymove;
+  }
+  //dragPosX = oldDPX + (float)(mouseX - dragStartX)/width;
+  //dragPosY = oldDPY + (float)(mouseY - dragStartY)/height;
   //println("DP: " + dragPosX + ", " + dragPosY);
+}
+void mouseClicked() {
+  clicked = true;
 }
 
 void pasteCanvas(PGraphics can) {
@@ -150,7 +172,9 @@ void draw() {
   }
 
   if (curPlugin == null ||
-      (modeCycle && ms > startTime + PLUGIN_TIME + FADE_TIME)) {
+      (modeCycle && ms > startTime + PLUGIN_TIME + FADE_TIME) ||
+      clicked) {
+    clicked = true;
     try {
       if (curPlugin != null) {
         curPlugin.finish();
@@ -170,10 +194,11 @@ void draw() {
       // We'll try instantiating the next plugin on the next go-round
       return;
     } finally {
-      if (modeCycle) {
+      if (modeCycle || clicked) {
         nextPluginIndex = (nextPluginIndex + 1) % plugins.length;
       }
     }
+    clicked = false;
   }
 
   curPlugin.draw();
@@ -216,7 +241,7 @@ void scrapeit() {
     }
     
     if (strips.size() != NUM_STRIPS) {
-      println("strips.size() != NUM_STRIPS; THAT'S BAD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+      println("strips.size() != NUM_STRIPS; "+strips.size()+" != "+NUM_STRIPS+"; THAT'S BAD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     }
     for (int i = 0; i < NUM_STRIPS; i++) {
       Strip s = strips.get(i);
@@ -244,6 +269,8 @@ void scrapeit() {
     lightSpecular(0, 0, 0);
     shapeMode(CENTER);
     
+    //shape(woman);
+    
     if (SPHERE) {
       //float SPHERE_TOP_RADIUS = 6;
       //float SPHERE_TOTAL_RADIUS = 42;
@@ -252,8 +279,8 @@ void scrapeit() {
       translate(width * 0.374, height * 0.505);
       scale(8, 8, 8);
       translate(20, 0);
-      rotateY(dragPosX * PI * 2);
-      rotateX(dragPosY * -PI);
+      rotateY(mainPosX * PI * 2);
+      rotateX(mainPosY * -PI);
 
 
       for (int i = 0; i < WIDTH; i++) {
@@ -279,9 +306,10 @@ void scrapeit() {
     } else {
       // Global transform of everything drawn below
       translate(width * 0.374, height * 0.505);
-      scale(8, 8, 8);
-      translate(width * dragPosX, height * dragPosY);
-      rotateY(-0.05 * -PI * 2);
+      float scl = 4 + shiftPosY * 4;
+      scale(scl, scl, scl);
+      translate(width * mainPosX / 2, height * mainPosY / 2);
+      rotateY((shiftPosX - 0) * -PI * 2);
       rotateX(0.05 * -PI);
       
       for (int i = 0; i < WIDTH; i++) {
@@ -289,6 +317,7 @@ void scrapeit() {
           for (int k = 0; k < HEIGHT; k++) {
             emissive(curPlugin.c.get(j, k + i*HEIGHT));
             pushMatrix();
+              rotateX(-0.3);
               translate(i*STRAND_SPACING, CYL_HEIGHT * k, j*STRAND_SPACING);
               shape(cyl);
             popMatrix();
