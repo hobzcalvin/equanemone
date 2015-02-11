@@ -61,25 +61,38 @@ class Sweeps extends EquanPlugin {
       endTime = ms + DURATION;
     }
     
-    //float mx = (float)mouseX / width;
     float progress = (float)(endTime - ms) / DURATION;
-    //println(progress, ROOT3*(progress*2 - 1), norm, target);
     Plane p = new Plane(norm.scale(ROOT3*(progress - 0.5)), target);
-    //Plane p = new Plane(new Vec3D(0, 0, 0), (new Vec3D(0, 1, 0)).rotateX(0).rotateZ(3.14/4));
-    
-    /*c.noStroke();
-    c.fill(0, 0.03);
-    c.rect(0, 0, c.width, c.height);
-    
-    c.stroke(hue, sat, 1);*/
+
     for (int i = 0; i < w; i++) {
       for (int j = 0; j < h; j++) {
         for (int k = 0; k < d; k++) {
-          c.stroke(hue, sat, hotness(p, i, j, k));
+          float x, y, z;
+          if (SPHERE) {
+            // Convert x/y/z in fake grid to actual places in the sphere
+            // angle around y-axis is the "width" factor
+            float yangle = (float)i/w * 2 * PI;
+            // angle around z-axis is the "height" factor
+            float zangle = ((float)j/h - 0.5) * PI;
+            // Start vector based on "depth" factor, which is probably flat
+            Vec3D v = new Vec3D((1.0 - (float)k/d), 0, 0);
+            // START HERE: This does something cool! Buuuuut not what was intended. It seems close, though. What could do that weird patterning?
+            // Probably best to use a consistent plane path, like top to bottom, and focus to get the math right. 
+            // Also, Planes will want the math fixed here too. So maybe just focus on an x-y-z to x-y-z function for when SPHERE is on.
+            // Should be easy enough to troubleshoot the with/without SPHERE values, though we thought that was already the case...hmm...
+            v = v.getRotatedY(yangle).getRotatedZ(zangle);
+            x = (v.x+1)/2*w;
+            y = (v.y+1)/2*h;
+            z = (v.z+1)/2*d;
+          } else {
+            x = i;
+            y = j;
+            z = k;
+          }
+          //println(i+","+j+","+k+": "+x+","+y+","+z);
+          c.stroke(hue, sat, hotness(p, x, y, z));
+          //c.stroke(hue, sat, hotness(p, i, j k));
           c.point(i, j + k*h);
-          /*if (hot(p, i, j, k)) {
-            c.point(i, j + k*h);
-          }*/
         }
       }
     }
