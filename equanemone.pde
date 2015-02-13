@@ -24,10 +24,10 @@ PApplet parent = this;
 Class[] plugins = {
   //TestEquan.class,
   //Noise.class,
-
+  Video.class,
   Sphere.class,
   //NewYears.class,
-  //Terrain.class,
+  Terrain.class,
   Fire.class,
   UpDown.class,
   Sweeps.class,
