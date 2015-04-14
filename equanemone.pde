@@ -10,8 +10,8 @@ import java.util.*;
 boolean SPHERE = false;
 
 int PIX_PER_STRAND = 40;
-int STRANDS_PER_STRIP = 8;
-int NUM_STRIPS = 8;
+int STRANDS_PER_STRIP = 10;
+int NUM_STRIPS = 10;
 // Ratio of pixel x distance over pixel y distance
 int WH_CORRECT = 10;
 
@@ -24,6 +24,7 @@ PApplet parent = this;
 Class[] plugins = {
   //TestEquan.class,
   //Noise.class,
+  Midi.class,
   Video.class,
   Sphere.class,
   //NewYears.class,
