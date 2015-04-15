@@ -24,6 +24,7 @@ PApplet parent = this;
 Class[] plugins = {
   //TestEquan.class,
   //Noise.class,
+  Leap.class,
   Midi.class,
   Video.class,
   Sphere.class,
@@ -74,7 +75,7 @@ void setup() {
     DEPTH = STRANDS_PER_STRIP;
   }
   
-  size(1280, 800, P3D);
+  size(1280, 600, P3D);
   registry = new DeviceRegistry();
   testObserver = new TestObserver();
   registry.addObserver(testObserver);
@@ -101,10 +102,10 @@ void setup() {
 
 int lastX;
 int lastY;
-float mainPosX = 0;
-float mainPosY = 0;
-float shiftPosX = 0;
-float shiftPosY = 0;
+float mainPosX = -0.00546878;
+float mainPosY = -0.19333327;
+float shiftPosX = 0.010156246;
+float shiftPosY = -0.111666664;
 float altPosX = 0;
 float altPosY = 0;
 void mousePressed() {
@@ -129,6 +130,7 @@ void mouseDragged() {
   //dragPosX = oldDPX + (float)(mouseX - dragStartX)/width;
   //dragPosY = oldDPY + (float)(mouseY - dragStartY)/height;
   //println("DP: " + dragPosX + ", " + dragPosY);
+  println("POSs", mainPosX, mainPosY, shiftPosX, shiftPosY);
 }
 void mouseClicked() {
   clicked = true;
