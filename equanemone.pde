@@ -10,9 +10,9 @@ import java.util.*;
 boolean SPHERE = false;
 
 int PIX_PER_STRAND = 40;
-int STRANDS_PER_STRIP = 10;
-int NUM_STRIPS = 10;
-// Ratio of pixel x distance over pixel y distance
+int STRANDS_PER_STRIP = 4; // "depth" (if non-square, make this smaller than width)
+int NUM_STRIPS = 8; // "width"
+// Ratio of pixel x/z distance over pixel y distance
 int WH_CORRECT = 10;
 
 int WIDTH, HEIGHT, DEPTH;
@@ -26,20 +26,20 @@ Img2Opc i2o;
 Class[] plugins = {
   //TestEquan.class,
   //Noise.class,
-  Leap.class,
-  Midi.class,
-  Video.class,
+  Raindrops.class,
   Sphere.class,
+  Fire.class,
+  Video.class,
   //NewYears.class,
   Terrain.class,
-  Fire.class,
   UpDown.class,
   Sweeps.class,
   Planes.class,
-  //Raindrops.class,
   Lava.class,
   //Fireflies.class,
   Fish.class,
+  //Leap.class,
+  //Midi.class,
 };
 
   
@@ -61,7 +61,7 @@ float STRAND_SPACING = 12;
 
 boolean modeCycle = false;
 boolean recording = false;
-boolean USE_OPC = false;
+boolean USE_OPC = true;
 
 PShape cyl;
 //PShape woman;

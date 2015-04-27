@@ -8,7 +8,7 @@ class Sphere extends EquanPlugin {
   
   float THRESHOLD = 0.4;
   float FULL_CENTER = 0.1;
-  float NOISE_INCR = 0.06;
+  float NOISE_INCR = 0.03;
   
   float noiseOffset = 0;
   

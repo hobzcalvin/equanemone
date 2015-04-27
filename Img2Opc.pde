@@ -1,20 +1,6 @@
 import processing.core.*;
 import processing.net.*;
-import java.awt.Color.*;
 
-/*
- * This library sends images to an OpenPixelControl client.
- * Width and height arguments passed to the constructor can specify display
- * size, but currently it assumes a flat display of zigzagging strings like so:
- *
- *   pixel 0     2h-1  2h
- *         1     .     .
- *         2     .     .
- *         .     .     .
- *         .     .     etc.
- *         .     h+1
- *         h-1   h
- */
 
 public class Img2Opc /*extends PApplet implements PConstants*/ {
   PApplet parent;
@@ -25,6 +11,8 @@ public class Img2Opc /*extends PApplet implements PConstants*/ {
   byte[] opcData;
   Client client;
   byte[] gamma;
+  
+  final static int HEADER_SIZE = 4;
 
   public Img2Opc(PApplet parent, String host, int port, int w, int h) {
     this.parent = parent;
@@ -52,34 +40,24 @@ public class Img2Opc /*extends PApplet implements PConstants*/ {
     opcData[2] = (byte)((numBytes >> 8) & 0xFF);
     opcData[3] = (byte)(numBytes & 0xFF);
 
-    setSourceSize(dispWidth, dispHeight);
-
     client = new Client(parent, host, port);
     // The server will hang up after a short period of inactivity.
     // Send a blank image and hope sendImg() is called soon.
     sendImg(new PImage(dispWidth, dispHeight));
   }
 
-  public void setSourceSize(int w, int h) {
-    // TODO: handle other sizes.
-    srch = h;
-    srcw = h;
-    srcx = (w - srcw) / 2;
-    srcy = 0;
-  }
-
   public PImage sendImg(PImage m) {
-    resizedFrame.copy(m, srcx, srcy, srcw, srch, 0, 0, resizedFrame.width, resizedFrame.height);
-
+    m.loadPixels();
     for (int x = 0; x < dispWidth; x++) {
       for (int y = 0; y < dispHeight; y++) {
-        int c = resizedFrame.pixels[x + y * dispWidth];
-        int pixelPos = 4 + 3 * (x * dispHeight + ((x % 2 == 0) ? y : (dispHeight - 1 - y)));
+        int c = m.pixels[x + (dispHeight - y - 1) * dispWidth];
+        int pixelPos = HEADER_SIZE + 3 * ((dispWidth - x - 1) * dispHeight + y);
         opcData[pixelPos + 0] = gamma[(byte)(c >> 16 & 0xFF) & 0xFF];
         opcData[pixelPos + 1] = gamma[(byte)(c >> 8  & 0xFF) & 0xFF];
         opcData[pixelPos + 2] = gamma[(byte)(c >> 0  & 0xFF) & 0xFF];
       }
     }
+    
     if (client != null) {
       if (client.output != null) {
         try {
