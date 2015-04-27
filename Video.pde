@@ -11,7 +11,7 @@ class Video extends EquanPlugin {
     
     needsFadeIn = false;
     
-    mov = new Movie(parent, "2945659.mp4");//"4851407.mp4");
+    mov = new Movie(parent, "4851407.mp4");
     mov.loop();
     
     c.colorMode(HSB, 255);

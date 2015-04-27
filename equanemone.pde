@@ -21,6 +21,8 @@ DeviceRegistry registry;
 TestObserver testObserver;
 PApplet parent = this;
 
+Img2Opc i2o;
+
 Class[] plugins = {
   //TestEquan.class,
   //Noise.class,
@@ -59,6 +61,7 @@ float STRAND_SPACING = 12;
 
 boolean modeCycle = false;
 boolean recording = false;
+boolean USE_OPC = false;
 
 PShape cyl;
 //PShape woman;
@@ -97,7 +100,12 @@ void setup() {
   
   startTime = millis();
   
-  cyl = makeCyl(CYL_DIA/2, CYL_DIA/2, CYL_HEIGHT, CYL_DETAIL);
+  if (USE_OPC) {
+    i2o = new Img2Opc(this, "127.0.0.1", 7890, WIDTH, HEIGHT*DEPTH);
+  } else {
+    cyl = makeCyl(CYL_DIA/2, CYL_DIA/2, CYL_HEIGHT, CYL_DETAIL);
+  }
+  
 }
 
 int lastX;
@@ -261,69 +269,75 @@ void scrapeit() {
       }
     }
   } else if (curPlugin != null) {
-    /*String s = dragPosX + ", " + dragPosY;
-    fill(255);
-    text(s, 0, height - 20);*/
     
-    ambientLight(40, 40, 40);
-    ambient(255, 255, 255);
-    directionalLight(40, 40, 40, 0, 0, -1);
-    lightFalloff(1, 0, 0);
-    lightSpecular(0, 0, 0);
-    shapeMode(CENTER);
-    
-    //shape(woman);
-    
-    if (SPHERE) {
-      //float SPHERE_TOP_RADIUS = 6;
-      //float SPHERE_TOTAL_RADIUS = 42;
-
-      // Global transform of everything drawn below
-      translate(width * 0.374, height * 0.505);
-      scale(8, 8, 8);
-      translate(20, 0);
-      rotateY(mainPosX * PI * 2);
-      rotateX(mainPosY * -PI);
-
-
-      for (int i = 0; i < WIDTH; i++) {
-        for (int k = 0; k < HEIGHT; k++) {
-          // -20 to 20
-          float lat = ((float)k/(HEIGHT-1) - 0.5) * PI * 0.7;
-          // 0 to 15
-          float lng = (float)i/WIDTH * PI * 2;
-          emissive(curPlugin.c.get(i, k));
-          pushMatrix();
-            // Set longitude
-            rotateY(lng);
-            // Account for central cylinder,
-            translate(SPHERE_TOP_RADIUS, 0, 0);
-            // Set latitude,
-            rotateZ(lat);
-            // Draw at equator,
-            translate(SPHERE_TOTAL_RADIUS - SPHERE_TOP_RADIUS, 0, 0);
-            shape(cyl);
-          popMatrix();
-        }
-      }
+    if (USE_OPC) {
+      i2o.sendImg(curPlugin.c);
     } else {
-      // Global transform of everything drawn below
-      translate(width * 0.374, height * 0.505);
-      float scl = 4 + shiftPosY * 4;
-      scale(scl, scl, scl);
-      translate(width * mainPosX / 2, height * mainPosY / 2);
-      rotateY((shiftPosX - 0) * -PI * 2);
-      rotateX(0.05 * -PI);
+      /*String s = dragPosX + ", " + dragPosY;
+      fill(255);
+      text(s, 0, height - 20);*/
       
-      for (int i = 0; i < WIDTH; i++) {
-        for (int j = 0; j < DEPTH; j++) {
+      
+      ambientLight(40, 40, 40);
+      ambient(255, 255, 255);
+      directionalLight(40, 40, 40, 0, 0, -1);
+      lightFalloff(1, 0, 0);
+      lightSpecular(0, 0, 0);
+      shapeMode(CENTER);
+      
+      //shape(woman);
+      
+      if (SPHERE) {
+        //float SPHERE_TOP_RADIUS = 6;
+        //float SPHERE_TOTAL_RADIUS = 42;
+  
+        // Global transform of everything drawn below
+        translate(width * 0.374, height * 0.505);
+        scale(8, 8, 8);
+        translate(20, 0);
+        rotateY(mainPosX * PI * 2);
+        rotateX(mainPosY * -PI);
+  
+  
+        for (int i = 0; i < WIDTH; i++) {
           for (int k = 0; k < HEIGHT; k++) {
-            emissive(curPlugin.c.get(j, k + i*HEIGHT));
+            // -20 to 20
+            float lat = ((float)k/(HEIGHT-1) - 0.5) * PI * 0.7;
+            // 0 to 15
+            float lng = (float)i/WIDTH * PI * 2;
+            emissive(curPlugin.c.get(i, k));
             pushMatrix();
-              rotateX(-0.3);
-              translate(i*STRAND_SPACING, CYL_HEIGHT * k, j*STRAND_SPACING);
+              // Set longitude
+              rotateY(lng);
+              // Account for central cylinder,
+              translate(SPHERE_TOP_RADIUS, 0, 0);
+              // Set latitude,
+              rotateZ(lat);
+              // Draw at equator,
+              translate(SPHERE_TOTAL_RADIUS - SPHERE_TOP_RADIUS, 0, 0);
               shape(cyl);
             popMatrix();
+          }
+        }
+      } else {
+        // Global transform of everything drawn below
+        translate(width * 0.374, height * 0.505);
+        float scl = 4 + shiftPosY * 4;
+        scale(scl, scl, scl);
+        translate(width * mainPosX / 2, height * mainPosY / 2);
+        rotateY((shiftPosX - 0) * -PI * 2);
+        rotateX(0.05 * -PI);
+        
+        for (int i = 0; i < WIDTH; i++) {
+          for (int j = 0; j < DEPTH; j++) {
+            for (int k = 0; k < HEIGHT; k++) {
+              emissive(curPlugin.c.get(j, k + i*HEIGHT));
+              pushMatrix();
+                rotateX(-0.3);
+                translate(i*STRAND_SPACING, CYL_HEIGHT * k, j*STRAND_SPACING);
+                shape(cyl);
+              popMatrix();
+            }
           }
         }
       }
