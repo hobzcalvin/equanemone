@@ -2,14 +2,14 @@ import processing.video.*;
 import toxi.geom.*;
 import toxi.geom.Vec3D;
 
-class Video extends EquanPlugin {
+class SpinVideo extends EquanPlugin {
   
   Movie mov;
   
-  public Video(int wd, int ht, int dp) {
+  public SpinVideo(int wd, int ht, int dp) {
     super(wd, ht, dp);
     
-    needsFadeIn = false;
+    needsFadeIn = true;
     
     mov = new Movie(parent, "4851407.mp4");
     mov.loop();

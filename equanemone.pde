@@ -26,10 +26,11 @@ Img2Opc i2o;
 Class[] plugins = {
   //TestEquan.class,
   //Noise.class,
-  Raindrops.class,
+  EchoVideo.class,
   Sphere.class,
+  Raindrops.class,
   Fire.class,
-  Video.class,
+  SpinVideo.class,
   //NewYears.class,
   Terrain.class,
   UpDown.class,
