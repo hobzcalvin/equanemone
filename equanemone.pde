@@ -263,7 +263,7 @@ void scrapeit() {
           if (SPHERE) {
             c = get(i*STRANDS_PER_STRIP + j, k);
           } else {
-            c = get(j, k + i*PIX_PER_STRAND);
+            c = get(i, k + j*PIX_PER_STRAND);
           }
           s.setPixel(c, k + (STRANDS_PER_STRIP-1-j)*PIX_PER_STRAND);
         }
@@ -332,7 +332,7 @@ void scrapeit() {
         for (int i = 0; i < WIDTH; i++) {
           for (int j = 0; j < DEPTH; j++) {
             for (int k = 0; k < HEIGHT; k++) {
-              emissive(curPlugin.c.get(j, k + i*HEIGHT));
+              emissive(curPlugin.c.get(i, k + j*HEIGHT));
               pushMatrix();
                 rotateX(-0.3);
                 translate(i*STRAND_SPACING, CYL_HEIGHT * k, j*STRAND_SPACING);
