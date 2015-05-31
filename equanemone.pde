@@ -10,8 +10,8 @@ import java.util.*;
 boolean SPHERE = false;
 
 int PIX_PER_STRAND = 40;
-int STRANDS_PER_STRIP = 4; // "depth" (if non-square, make this smaller than width)
-int NUM_STRIPS = 8; // "width"
+int STRANDS_PER_STRIP = 8; // "depth" (if non-square, make this smaller than width)
+int NUM_STRIPS = 4; // "width"
 // Ratio of pixel x/z distance over pixel y distance
 int WH_CORRECT = 10;
 
@@ -27,18 +27,20 @@ Class[] plugins = {
   //TestEquan.class,
   //Noise.class,
   EchoVideo.class,
-  Sphere.class,
-  Raindrops.class,
+  UpDown.class,
   Fire.class,
+  Sphere.class,
   SpinVideo.class,
+  Planes.class,
+  EchoVideo.class,
+  Raindrops.class,
   //NewYears.class,
   Terrain.class,
-  UpDown.class,
-  Sweeps.class,
-  Planes.class,
-  Lava.class,
-  //Fireflies.class,
   Fish.class,
+  Sweeps.class,
+  SpinVideo.class,
+  Lava.class,
+  Fireflies.class,
   //Leap.class,
   //Midi.class,
 };
@@ -54,15 +56,15 @@ float SPHERE_TOP_RADIUS = 6;
 float SPHERE_TOTAL_RADIUS = 42;
 
 int FADE_TIME = 1500;
-int PLUGIN_TIME = 10000;
+int PLUGIN_TIME = 60000;
 float CYL_DIA = 2.5;
 float CYL_HEIGHT = SPHERE ? 2: 1.23;
 int CYL_DETAIL = 8;
 float STRAND_SPACING = 12;
 
-boolean modeCycle = false;
+boolean modeCycle = true;
 boolean recording = false;
-boolean USE_OPC = true;
+boolean USE_OPC = false;
 
 PShape cyl;
 //PShape woman;
@@ -74,9 +76,11 @@ void setup() {
     HEIGHT = PIX_PER_STRAND;
     DEPTH = 1;
   } else {
-    WIDTH = NUM_STRIPS;
     HEIGHT = PIX_PER_STRAND;
-    DEPTH = STRANDS_PER_STRIP;
+    //WIDTH = NUM_STRIPS;
+    //DEPTH = STRANDS_PER_STRIP;
+    WIDTH = STRANDS_PER_STRIP;
+    DEPTH = NUM_STRIPS;
   }
   
   size(1280, 600, P3D);
@@ -84,6 +88,7 @@ void setup() {
   testObserver = new TestObserver();
   registry.addObserver(testObserver);
   registry.setAntiLog(true);
+  //registry.setAutoThrottle(true);
   
   //woman = loadShape("scylla_2064/scylla_2064.obj");
 
@@ -111,10 +116,14 @@ void setup() {
 
 int lastX;
 int lastY;
-float mainPosX = -0.00546878;
+/*float mainPosX = -0.00546878;
 float mainPosY = -0.19333327;
 float shiftPosX = 0.010156246;
-float shiftPosY = -0.111666664;
+float shiftPosY = -0.111666664;*/
+float mainPosX = -0.025781278;
+float mainPosY = -0.0966666;
+float shiftPosX = 0.0078124884;
+float shiftPosY = 0.76999956;
 float altPosX = 0;
 float altPosY = 0;
 void mousePressed() {
@@ -166,8 +175,8 @@ void pasteCanvas(PGraphics can) {
 void movieEvent(Movie m) {
   m.read();
 }
-
-/*int CORR_R = 255;
+/*
+int CORR_R = 255;
 int CORR_G = 100;
 int CORR_B = 100;*/
 
@@ -176,7 +185,7 @@ void draw() {
 
   long ms = millis();
   
-  if (curPlugin == null && ms < startTime + 2000) {
+  if (curPlugin == null && ms < startTime + 10000) {
     // Stupid pause to avoid opening hiccups
     pasteCanvas(bg);
     scrapeit();
@@ -263,7 +272,8 @@ void scrapeit() {
           if (SPHERE) {
             c = get(i*STRANDS_PER_STRIP + j, k);
           } else {
-            c = get(i, k + j*PIX_PER_STRAND);
+            //c = get(i, k + j*PIX_PER_STRAND);
+            c = get(j, k + i*PIX_PER_STRAND);
           }
           s.setPixel(c, k + (STRANDS_PER_STRIP-1-j)*PIX_PER_STRAND);
         }

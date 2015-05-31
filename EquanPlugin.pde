@@ -24,4 +24,17 @@ public abstract class EquanPlugin {
   synchronized void finish() {
     // This plugin is being turned off; stop any threads.
   }
+  
+  String randomVideo() {
+    //if (true) return "videos/1617358.mp4";
+    java.io.File folder = new java.io.File(dataPath("videos"));
+    String[] filenames = folder.list();
+    
+    while (true) {
+      String f = filenames[int(random(filenames.length))];
+      if (!f.equals(".DS_Store")) {
+        return "videos/" + f;
+      }
+    }
+  }
 }

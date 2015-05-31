@@ -11,7 +11,9 @@ class SpinVideo extends EquanPlugin {
     
     needsFadeIn = true;
     
-    mov = new Movie(parent, "4851407.mp4");
+    String f = this.randomVideo();
+    println("Loading", f);
+    mov = new Movie(parent, f);// "2059820.mp4");
     mov.loop();
     
     c.colorMode(HSB, 255);
@@ -59,7 +61,7 @@ class SpinVideo extends EquanPlugin {
     return 0; */
   }
 
-  int doframerate = 0;
+  //int doframerate = 0;
   synchronized void draw() {
     //c.image(bg, 0, 0);
     plane = new Plane(origin, norm.getRotatedY(theta));
@@ -80,8 +82,14 @@ class SpinVideo extends EquanPlugin {
       }
     }
     theta += 0.01;
-    if (doframerate++ % 10 == 0) {
+    /*if (doframerate++ % 10 == 0) {
       println(frameRate);
-    }
+    }*/
+  }
+  
+  
+  synchronized void finish() {
+    mov.stop();
+    mov = null;
   }
 }

@@ -16,7 +16,9 @@ class EchoVideo extends EquanPlugin {
     
     frames = new LinkedList<PImage>();
     
-    mov = new Movie(parent, "loopingd.mp4");
+    String f = this.randomVideo();
+    println("Loading", f);
+    mov = new Movie(parent, f);// "2059820.mp4");
     mov.loop();
   }
 
@@ -49,5 +51,12 @@ class EchoVideo extends EquanPlugin {
       }
       c.image(frame, 0, i*h);
     }
+
+  }
+
+
+  synchronized void finish() {
+    mov.stop();
+    mov = null;
   }
 }
