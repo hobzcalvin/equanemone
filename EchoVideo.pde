@@ -24,6 +24,11 @@ class EchoVideo extends EquanPlugin {
 
   synchronized void draw() {
     PImage frame = mov.get();
+    
+    if (frame.width == 0 || frame.height == 0) {
+      // This never happens on Mac, but trying to resize a 0x0 frame on Windows and Linux crashes.
+      return;
+    }
     // Resize current frame to size of frames in the display
     frame.resize(w, h);
     
