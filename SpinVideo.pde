@@ -66,6 +66,12 @@ class SpinVideo extends EquanPlugin {
     //c.image(bg, 0, 0);
     plane = new Plane(origin, norm.getRotatedY(theta));
     frame = mov.get();
+    
+    if (frame.width == 0 || frame.height == 0) {
+      // This never happens on Mac, but trying to resize a 0x0 frame on Windows and Linux crashes.
+      return;
+    }
+
     frame.resize(max(w, d) * 10, h);
         
     for (int i = 0; i < w; i++) {
