@@ -44,6 +44,10 @@ class Leap extends EquanPlugin {
       pos.x = (pos.x - minx) / (maxx - minx) * (d-1);
       pos.y = (pos.y - miny) / (maxy - miny) * (h-1);
       pos.z = (1.0 - (pos.z - minz) / (maxz - minz)) * (w-1);
+      // XXX: Hack: swap these so the preview looks right.
+      float temp = pos.x;
+      pos.x = pos.z;
+      pos.z = temp;
       
       println(curFinger, pos);
 
@@ -57,7 +61,7 @@ class Leap extends EquanPlugin {
             }*/
             if (dist < threshold) {
               dist = pow((threshold-dist)/threshold, 2);
-              c.stroke(curFinger / 5.0, 1, 1, dist);
+              c.stroke(curFinger / 10.0, 1, 1, dist);
               c.point(i, j*h + k);
             }
           }
