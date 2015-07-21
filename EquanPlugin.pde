@@ -25,6 +25,9 @@ public abstract class EquanPlugin {
     // This plugin is being turned off; stop any threads.
   }
   
+  synchronized void mouseClicked() {
+  }
+  
   String randomVideo() {
     //if (true) return "videos/1617358.mp4";
     java.io.File folder = new java.io.File(dataPath("videos"));

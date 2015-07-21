@@ -11,7 +11,7 @@ boolean SPHERE = false;
 
 int PIX_PER_STRAND = 40;
 int STRANDS_PER_STRIP = 8; // "depth" (if non-square, make this smaller than width)
-int NUM_STRIPS = 4; // "width"
+int NUM_STRIPS = 8; // "width"
 // Ratio of pixel x/z distance over pixel y distance
 int WH_CORRECT = 10;
 
@@ -124,8 +124,8 @@ float mainPosX = -0.025781278;
 float mainPosY = -0.0966666;
 float shiftPosX = 0.0078124884;
 float shiftPosY = 0.76999956;
-float altPosX = 0;
-float altPosY = 0;
+float altPosX = 1;
+float altPosY = 1;
 void mousePressed() {
   lastX = mouseX;
   lastY = mouseY;
@@ -135,10 +135,10 @@ void mouseDragged() {
   float ymove = (float)(mouseY - lastY) / height;
   mousePressed();
   
-  if (keyPressed) {
+  if (keyPressed && keyCode == SHIFT) {
     shiftPosX += xmove;
     shiftPosY += ymove;
-  } else if (false && keyCode == ALT) {
+  } else if (keyPressed && keyCode == ALT) {
     altPosX += xmove;
     altPosY += ymove;
   } else {
@@ -148,10 +148,16 @@ void mouseDragged() {
   //dragPosX = oldDPX + (float)(mouseX - dragStartX)/width;
   //dragPosY = oldDPY + (float)(mouseY - dragStartY)/height;
   //println("DP: " + dragPosX + ", " + dragPosY);
-  println("POSs", mainPosX, mainPosY, shiftPosX, shiftPosY);
+  println("POSs", mainPosX, mainPosY, shiftPosX, shiftPosY, altPosX, altPosY);
 }
 void mouseClicked() {
-  clicked = true;
+  if (keyPressed) {
+    if (curPlugin != null) {
+      curPlugin.mouseClicked();
+    }
+  } else {
+    clicked = true;
+  }
 }
 
 void pasteCanvas(PGraphics can) {
@@ -332,7 +338,7 @@ void scrapeit() {
         }
       } else {
         // Global transform of everything drawn below
-        translate(width * 0.374, height * 0.505);
+        translate(width * 0.374 * altPosX, height * 0.505 * altPosY);
         float scl = 4 + shiftPosY * 4;
         scale(scl, scl, scl);
         translate(width * mainPosX / 2, height * mainPosY / 2);
