@@ -1,3 +1,7 @@
+
+
+
+
 import com.heroicrobot.dropbit.devices.*;
 import com.heroicrobot.dropbit.common.*;
 import com.heroicrobot.dropbit.discovery.*;
@@ -7,23 +11,15 @@ import com.heroicrobot.dropbit.devices.pixelpusher.*;
 import processing.core.*;
 import java.util.*;
 
-boolean SPHERE = false;
+import themidibus.*;
 
-int PIX_PER_STRAND = 40;
-int STRANDS_PER_STRIP = 8; // "depth" (if non-square, make this smaller than width)
-int NUM_STRIPS = 8; // "width"
-// Ratio of pixel x/z distance over pixel y distance
-int WH_CORRECT = 10;
 
-int WIDTH, HEIGHT, DEPTH;
 
-DeviceRegistry registry;
-TestObserver testObserver;
-PApplet parent = this;
+// COMMON SETTINGS
 
-Img2Opc i2o;
-
+// List of plugins to cycle through, in order. Duplicates allowed.
 Class[] plugins = {
+  Midi.class,
   //TestEquan.class,
   //Noise.class,
   EchoVideo.class,
@@ -42,33 +38,101 @@ Class[] plugins = {
   Lava.class,
   Fireflies.class,
   //Leap.class,
-  //Midi.class,
+  //SimpleTest.class,
 };
 
-  
+int PIX_PER_STRAND = 40; // "height"
+int STRANDS_PER_STRIP = 8; // "depth" (if non-square, make this smaller than width)
+int NUM_STRIPS = 8; // "width"
+
+// Time a plugin fades in/out (if needsFadeIn is set true, the default)
+int FADE_TIME = 1500;
+// Time to show each plugin if modeCycle is true
+int PLUGIN_TIME = 60000;
+// Cycle modes automatically (clicking always cycles modes)
+boolean modeCycle = false;
+// Record PixelPusher output, usually to ~/canned.dat
+boolean recording = false;
+// Instead of local simulator, send to a local OpenPixelControl server
+boolean USE_OPC = false;
+
+/*
+To get a quick and simple MIDI source:
+- download/install vmpk
+- Audio Midi Setup > Midi window > IAC Driver > "Device is online" checked
+- add a port in IAC Driver properties: "ProcessingPort"
+- to hear the MIDI produced, maybe start up GarageBand too
+- set MIDI_IN_PORT below to "ProcessingPort"
+
+I can play notes on vmpk, hear them in GarageBand, and see the plugin react 
+to them in Processing. Neat!
+*/
+
+String MIDI_IN_PORT = "Port 1";
+
+
+
+
+
+
+
+
+
+// LESS COMMON SETTINGS (plugin developers can probably stop here!!!!!!)
+
+boolean SPHERE = false;
+
+// Ratio of pixel x/z distance over pixel y distance
+int WH_CORRECT = 10;
+
+float SPHERE_TOP_RADIUS = 6;
+float SPHERE_TOTAL_RADIUS = 42;
+
+float CYL_DIA = 2.5;
+float CYL_HEIGHT = SPHERE ? 2: 1.23;
+int CYL_DETAIL = 8;
+float STRAND_SPACING = 12;
+
+
+
+
+
+
+// VARS
+
+int WIDTH, HEIGHT, DEPTH;
+
+DeviceRegistry registry;
+TestObserver testObserver;
+PApplet parent = this;
+
+MidiBus midiBus;
+Img2Opc i2o;
+
 PGraphics bg;
 EquanPlugin curPlugin;
 int nextPluginIndex = 0;
 int numRecords = 0;
 long startTime;
 
-float SPHERE_TOP_RADIUS = 6;
-float SPHERE_TOTAL_RADIUS = 42;
-
-int FADE_TIME = 1500;
-int PLUGIN_TIME = 60000;
-float CYL_DIA = 2.5;
-float CYL_HEIGHT = SPHERE ? 2: 1.23;
-int CYL_DETAIL = 8;
-float STRAND_SPACING = 12;
-
-boolean modeCycle = true;
-boolean recording = false;
-boolean USE_OPC = false;
-
 PShape cyl;
-//PShape woman;
 boolean clicked = false;
+
+int lastX;
+int lastY;
+// Seed these with initial values that have worked well for me at the current window size
+float mainPosX = -0.035781275;
+float mainPosY = -0.09833326;
+float shiftPosX = -0.014843752;
+float shiftPosY = 0.16333339;
+float altPosX = 1.0867198;
+float altPosY = 0.6900003;
+
+
+
+
+
+// MAIN SETUP FUNCTION
 
 void setup() {
   if (SPHERE) {
@@ -83,7 +147,7 @@ void setup() {
     DEPTH = NUM_STRIPS;
   }
   
-  size(1280, 600, P3D);
+  size(1200, 600, P3D);
   registry = new DeviceRegistry();
   testObserver = new TestObserver();
   registry.addObserver(testObserver);
@@ -112,20 +176,11 @@ void setup() {
     cyl = makeCyl(CYL_DIA/2, CYL_DIA/2, CYL_HEIGHT, CYL_DETAIL);
   }
   
+  MidiBus.list();
+  midiBus = new MidiBus(this, MIDI_IN_PORT, -1);
+  
 }
 
-int lastX;
-int lastY;
-/*float mainPosX = -0.00546878;
-float mainPosY = -0.19333327;
-float shiftPosX = 0.010156246;
-float shiftPosY = -0.111666664;*/
-float mainPosX = -0.025781278;
-float mainPosY = -0.0966666;
-float shiftPosX = 0.0078124884;
-float shiftPosY = 0.76999956;
-float altPosX = 1;
-float altPosY = 1;
 void mousePressed() {
   lastX = mouseX;
   lastY = mouseY;
@@ -160,6 +215,7 @@ void mouseClicked() {
   }
 }
 
+
 void pasteCanvas(PGraphics can) {
   PImage c = can.get();
   image(c, 0, 0);
@@ -186,12 +242,16 @@ int CORR_R = 255;
 int CORR_G = 100;
 int CORR_B = 100;*/
 
+
+
+// MAIN DRAW FUNCTION
+
 void draw() {
   background(0, 0, 0);
 
   long ms = millis();
   
-  if (curPlugin == null && ms < startTime + 10000) {
+  if (curPlugin == null && ms < startTime + 100) {
     // Stupid pause to avoid opening hiccups
     pasteCanvas(bg);
     scrapeit();
@@ -252,9 +312,78 @@ void draw() {
   pasteCanvas(curPlugin.c);
   noTint();
   
+
   scrapeit();
   
+  // XXX: Hack that makes futher 2D drawing on top of existing 3D drawing work. Not sure why/what this might break.
+  hint(DISABLE_DEPTH_TEST);
+  camera();
+  noLights();
+  
+  simulateMidi(false);
+  
+  // Last bit of the hack.
+  hint(ENABLE_DEPTH_TEST);
 
+}
+
+
+
+void noteOn(int channel, int pitch, int velocity) {
+  if (curPlugin != null) {
+    if (pitch < WIDTH*DEPTH) {
+      curPlugin.noteOn(channel, pitch, velocity, pitch % WIDTH, pitch / WIDTH);
+    } else {
+      curPlugin.noteOn(channel, pitch, velocity, -1, -1);
+    }
+  }
+}
+
+void noteOff(int channel, int pitch, int velocity) {
+  if (curPlugin != null) {
+    if (pitch < WIDTH*DEPTH) {
+      curPlugin.noteOff(channel, pitch, velocity, pitch % WIDTH, pitch / WIDTH);
+    } else {
+      curPlugin.noteOff(channel, pitch, velocity, -1, -1);
+    }
+  }
+}
+
+
+int midiSimSize = 4;
+int midiSimSpacing = 10;
+int midiSimFingerSize = 40;
+void simulateMidi(boolean moved) {
+  //ggg
+  fill(255, 255, 255, 0.5);
+  noStroke();
+  for (int i = 1; i <= WIDTH; i++) {
+    for (int j = 1; j <= DEPTH; j++) {
+      int x = width - i*midiSimSpacing;
+      int y = height - j*midiSimSpacing;
+      if (moved) {
+        if (dist(mouseX, mouseY, x, y) <= midiSimFingerSize/2) {
+          noteOn(0, i-1 + (j-1)*WIDTH, 128);
+          noteOff(0, i-1 + (j-1)*WIDTH, 128);
+          fill(255, 0, 0, 1);
+          ellipse(x, y, midiSimSize, midiSimSize);
+        }
+      } else {
+        ellipse(x, y, midiSimSize, midiSimSize);
+      }
+    }
+  }
+  
+  if (!moved && mouseX > width - WIDTH*midiSimSpacing - midiSimFingerSize &&
+      mouseY > height - DEPTH*midiSimSpacing - midiSimFingerSize) {
+     ellipse(mouseX, mouseY, midiSimFingerSize, midiSimFingerSize);
+  }
+  
+  fill(255, 255, 255, 1);
+}
+
+void mouseMoved() {
+  simulateMidi(true);
 }
 
 void scrapeit() {
@@ -290,11 +419,7 @@ void scrapeit() {
     if (USE_OPC) {
       i2o.sendImg(curPlugin.c);
     } else {
-      /*String s = dragPosX + ", " + dragPosY;
-      fill(255);
-      text(s, 0, height - 20);*/
-      
-      
+           
       ambientLight(40, 40, 40);
       ambient(255, 255, 255);
       directionalLight(40, 40, 40, 0, 0, -1);
@@ -307,7 +432,7 @@ void scrapeit() {
       if (SPHERE) {
         //float SPHERE_TOP_RADIUS = 6;
         //float SPHERE_TOTAL_RADIUS = 42;
-  
+        
         // Global transform of everything drawn below
         translate(width * 0.374, height * 0.505);
         scale(8, 8, 8);

@@ -28,6 +28,13 @@ public abstract class EquanPlugin {
   synchronized void mouseClicked() {
   }
   
+  synchronized void noteOn(int channel, int pitch, int velocity, int tentacleX, int tentacleZ) {
+  }
+  
+  synchronized void noteOff(int channel, int pitch, int velocity, int tentacleX, int tentacleZ) {
+  }
+
+  
   String randomVideo() {
     //if (true) return "videos/1617358.mp4";
     java.io.File folder = new java.io.File(dataPath("videos"));
