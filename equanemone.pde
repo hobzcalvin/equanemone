@@ -19,7 +19,7 @@ import themidibus.*;
 
 // List of plugins to cycle through, in order. Duplicates allowed.
 Class[] plugins = {
-  Midi.class,
+  SimpleMidi.class,
   //TestEquan.class,
   //Noise.class,
   EchoVideo.class,
@@ -41,20 +41,20 @@ Class[] plugins = {
   //SimpleTest.class,
 };
 
-int PIX_PER_STRAND = 40; // "height"
-int STRANDS_PER_STRIP = 8; // "depth" (if non-square, make this smaller than width)
-int NUM_STRIPS = 8; // "width"
+final int PIX_PER_STRAND = 40; // "height"
+final int STRANDS_PER_STRIP = 8; // "depth" (if non-square, make this smaller than width)
+final int NUM_STRIPS = 8; // "width"
 
 // Time a plugin fades in/out (if needsFadeIn is set true, the default)
-int FADE_TIME = 1500;
+final int FADE_TIME = 1500;
 // Time to show each plugin if modeCycle is true
-int PLUGIN_TIME = 60000;
+final int PLUGIN_TIME = 60000;
 // Cycle modes automatically (clicking always cycles modes)
-boolean modeCycle = false;
+final boolean modeCycle = false;
 // Record PixelPusher output, usually to ~/canned.dat
-boolean recording = false;
+final boolean recording = false;
 // Instead of local simulator, send to a local OpenPixelControl server
-boolean USE_OPC = false;
+final boolean USE_OPC = false;
 
 /*
 To get a quick and simple MIDI source:
@@ -68,7 +68,10 @@ I can play notes on vmpk, hear them in GarageBand, and see the plugin react
 to them in Processing. Neat!
 */
 
-String MIDI_IN_PORT = "Port 1";
+final String MIDI_IN_PORT = "Port 1";
+
+// For now, we don't care about note-off events.
+final boolean MIDI_IGNORE_OFFS = true;
 
 
 
@@ -80,18 +83,18 @@ String MIDI_IN_PORT = "Port 1";
 
 // LESS COMMON SETTINGS (plugin developers can probably stop here!!!!!!)
 
-boolean SPHERE = false;
+final boolean SPHERE = false;
 
 // Ratio of pixel x/z distance over pixel y distance
-int WH_CORRECT = 10;
+final int WH_CORRECT = 10;
 
-float SPHERE_TOP_RADIUS = 6;
-float SPHERE_TOTAL_RADIUS = 42;
+final float SPHERE_TOP_RADIUS = 6;
+final float SPHERE_TOTAL_RADIUS = 42;
 
-float CYL_DIA = 2.5;
-float CYL_HEIGHT = SPHERE ? 2: 1.23;
-int CYL_DETAIL = 8;
-float STRAND_SPACING = 12;
+final float CYL_DIA = 2.5;
+final float CYL_HEIGHT = SPHERE ? 2: 1.23;
+final int CYL_DETAIL = 8;
+final float STRAND_SPACING = 12;
 
 
 
@@ -101,6 +104,7 @@ float STRAND_SPACING = 12;
 // VARS
 
 int WIDTH, HEIGHT, DEPTH;
+long[][] lastTouched;
 
 DeviceRegistry registry;
 TestObserver testObserver;
@@ -179,6 +183,12 @@ void setup() {
   MidiBus.list();
   midiBus = new MidiBus(this, MIDI_IN_PORT, -1);
   
+  lastTouched = new long[WIDTH][DEPTH];
+  for (int i = 0; i < WIDTH; i++) {
+    for (int j = 0; j < DEPTH; j++) {
+      lastTouched[i][j] = 0;
+    }
+  }
 }
 
 void mousePressed() {
@@ -329,6 +339,115 @@ void draw() {
 
 
 
+
+
+
+
+// MIDI STUFF
+
+class MidiEvent {
+  long time;
+  int channel;
+  int pitch;
+  int velocity;
+  boolean on;
+  int tentacleX;
+  int tentacleZ;
+  
+  public MidiEvent (int c, int p, int v, boolean o, int tx, int tz) {
+    time = millis();
+    channel = c;
+    pitch = p;
+    velocity = v;
+    on = o;
+    tentacleX = tx;
+    tentacleZ = tz;
+    
+    fireEvent();
+  }
+  public MidiEvent(int c, int p, int v, boolean o) {
+    time = millis();
+    channel = c;
+    pitch = p;
+    velocity = v;
+    on = o;
+    tentacleX = -1;
+    tentacleZ = -1;
+    
+    fireEvent();
+  }
+  
+  void fireEvent() {
+    if (curPlugin != null) {
+      if (on) {
+        curPlugin.noteOn(channel, pitch, velocity, tentacleX, tentacleZ);
+      } else {
+        curPlugin.noteOff(channel, pitch, velocity, tentacleX, tentacleZ);
+      }
+    }
+    
+    addMidiEvent(this);
+  }
+}
+
+long MIDI_TIMEOUT = 5000;
+
+LinkedList<MidiEvent> recentMidiEvents = new LinkedList<MidiEvent>();
+void addMidiEvent(MidiEvent m) {
+  // add it to the linked list and remove stale ones.
+  recentMidiEvents.addFirst(m);
+  
+  if (m.tentacleX != -1 && m.tentacleZ != -1) {
+    lastTouched[m.tentacleX][m.tentacleZ] = millis();
+  }
+  
+  println(recentMidiEvents.size());
+}
+
+long[][] getMidiLastTouched() {
+  return lastTouched;
+}
+
+
+LinkedList<MidiEvent> getRecentMidiEvents() {
+  while (recentMidiEvents.size() > 0) {
+    MidiEvent old = recentMidiEvents.removeLast();
+    if (old.time > millis() - MIDI_TIMEOUT) {
+      // We've removed a not-expired event; put it back and break
+      recentMidiEvents.addLast(old);
+      println("valid event!");
+      break;
+    } else {
+      println("stale event.");
+    }
+  }
+  return recentMidiEvents;
+}
+
+void noteOn(int channel, int pitch, int velocity) {
+  if (pitch < WIDTH*DEPTH) {
+    new MidiEvent(channel, pitch, velocity, true, pitch % WIDTH, pitch / WIDTH);
+  } else {
+    new MidiEvent(channel, pitch, velocity, true, -1, -1);
+  }
+}
+void noteOff(int channel, int pitch, int velocity) {
+  if (MIDI_IGNORE_OFFS) {
+    return;
+  }
+  if (pitch < WIDTH*DEPTH) {
+    new MidiEvent(channel, pitch, velocity, false, pitch % WIDTH, pitch / WIDTH);
+  } else {
+    new MidiEvent(channel, pitch, velocity, false, -1, -1);
+  }
+}
+
+
+
+/*
+
+simpler system
+
 void noteOn(int channel, int pitch, int velocity) {
   if (curPlugin != null) {
     if (pitch < WIDTH*DEPTH) {
@@ -338,7 +457,6 @@ void noteOn(int channel, int pitch, int velocity) {
     }
   }
 }
-
 void noteOff(int channel, int pitch, int velocity) {
   if (curPlugin != null) {
     if (pitch < WIDTH*DEPTH) {
@@ -347,14 +465,12 @@ void noteOff(int channel, int pitch, int velocity) {
       curPlugin.noteOff(channel, pitch, velocity, -1, -1);
     }
   }
-}
-
+}*/
 
 int midiSimSize = 4;
 int midiSimSpacing = 10;
 int midiSimFingerSize = 40;
 void simulateMidi(boolean moved) {
-  //ggg
   fill(255, 255, 255, 0.5);
   noStroke();
   for (int i = 1; i <= WIDTH; i++) {
