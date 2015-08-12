@@ -400,8 +400,6 @@ void addMidiEvent(MidiEvent m) {
   if (m.tentacleX != -1 && m.tentacleZ != -1) {
     lastTouched[m.tentacleX][m.tentacleZ] = millis();
   }
-  
-  println(recentMidiEvents.size());
 }
 
 long[][] getMidiLastTouched() {
@@ -415,10 +413,10 @@ LinkedList<MidiEvent> getRecentMidiEvents() {
     if (old.time > millis() - MIDI_TIMEOUT) {
       // We've removed a not-expired event; put it back and break
       recentMidiEvents.addLast(old);
-      println("valid event!");
+      //println("valid event!");
       break;
     } else {
-      println("stale event.");
+      //println("stale event.");
     }
   }
   return recentMidiEvents;
