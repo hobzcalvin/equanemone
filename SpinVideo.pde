@@ -73,10 +73,16 @@ class SpinVideo extends EquanPlugin {
     }
 
     frame.resize(max(w, d) * 10, h);
+    
+    // store last-touched times for each tentacle locally
+    long[][] touched = getMidiLastTouched();
+    // Remember this so we don't keep calling millis()
+    long millis = millis();
+
         
     for (int i = 0; i < w; i++) {
-      for (int j = 0; j < h; j++) {
-        for (int k = 0; k < d; k++) {
+      for (int k = 0; k < d; k++) {
+        for (int j = 0; j < h; j++) {
           //c.stroke(0, 0, hotness(i, j, k));
           //c.point(i, j + k*h);
           /*if (hotness(i, j, k)) {
@@ -85,6 +91,16 @@ class SpinVideo extends EquanPlugin {
           hotness(i, j, k);
           c.point(i, j + k*h);
         }
+        
+        // Now apply an alpha'd inverse for touched tentacles
+        float invert = cos(min(0.001*(millis-touched[i][k]), PI/2));
+        if (invert > 0.001) {
+          PImage col = c.get(i, k*h, 1, h);
+          col.filter(INVERT);
+          c.tint(255, 255.0 * invert);
+          c.image(col, i, k*h);
+        }
+          
       }
     }
     theta += 0.01;
