@@ -10,8 +10,8 @@ class EchoVideo extends EquanPlugin {
   public static final int FRAME_DELAY = 15;
   // Fraction of movie that should be reserved from top and bottom for wiggle
   final float WIGGLE_SIZE = 0.15;
-  // How fast wiggle dissipates. Higher number makes decay take longer.
-  final float WIGGLE_DECAY = 8000.0;
+  // How fast wiggle dissipates. Lower number makes decay take longer.
+  final float WIGGLE_DECAY = 1600.0;
   final int WIGGLE_DECAY_POWER = 8;
   // Speed of wiggle motion
   final float WIGGLE_SPEED = 0.015;
@@ -53,7 +53,8 @@ class EchoVideo extends EquanPlugin {
     
     long[][] touched = getMidiLastTouched();
     long millis = millis();
-    int grabHeight = int(frame.height * (1.0 - 2.0*WIGGLE_SIZE));
+    int grabHeight = int((float)frame.height * (1.0 - 2.0*WIGGLE_SIZE));
+    
     
     // Resize to width, but keep full height resolution for better wiggle
     frame.resize(w, frame.height);
@@ -81,23 +82,23 @@ class EchoVideo extends EquanPlugin {
       for (int j = 0; j < w; j++) {
         float msSinceTouch = millis - touched[j][i];
         
+        // A fraction used to suppress the bounce over time.
+        // Starts at cos(0)=1 and is limited to cos(pi/2)=0.
+        // Because floating-point cosine doesn't work too great, go a little beyond pi/2 (negative) and clamp it above zero. Groan.
+        float decay = max(cos(min(msSinceTouch/WIGGLE_DECAY, PI/2.0+0.0001)), 0);
+        // This gives us the bounce, based on msSinceTouch
+        // (Processing docs claim it's broken to call sin() outside the range [0, 2pi] but it seems okay here?)
+        float sine = sin(msSinceTouch * WIGGLE_SPEED);
+                     
         int grabY = int(
           // y-position to grab grabHeight from the frame is the frame's height,
           float(frame.height)
           // times the WIGGLE_SIZE fraction,
           * WIGGLE_SIZE
-          // Times a value between 0 and 2 (based on sine),
-          * (1 + sin(
-                       // which computes relative to msSinceTouch and a constant,
-                       msSinceTouch * WIGGLE_SPEED
-                       // (Processing docs claim it's broken to call sin() outside the range [0, 2pi] but it seems okay here?)
-                       /*radians((msSinceTouch/2) % 360)*/
-                     )
-                 // divided by a decay value that is at least 1 and increases with msSinceTouch and a constant factor,
-                 // squared because it looks better than a linear decay.
-                 / pow(1 + msSinceTouch/WIGGLE_DECAY, WIGGLE_DECAY_POWER)
-            )
-          );
+          // Times a value between 0 and 2 (based on sine) with decay
+          * (1.0 + sine * decay)
+        );
+        
         c.image(frame.get(j, grabY, 1, grabHeight), j, i*h, 1, h);
       }
     }
