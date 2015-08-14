@@ -3,14 +3,18 @@ class Raindrops extends EquanPlugin {
   class Dropper extends Thread {
     int a, b;
     boolean running;
+    boolean doFlash;
     
     Dropper (int av, int bv) {
       a=av;
       b=bv;
       running = true;
+      
+      doFlash = false;
     }
     
     void slp(long ms) {
+      if (doFlash) return;
       try {
         Dropper.sleep(ms);
       } catch(InterruptedException e) {
@@ -33,8 +37,29 @@ class Raindrops extends EquanPlugin {
             c.set(a, i + b*h, black);
             c.endDraw();
           }
+          if (doFlash) {
+            doFlash = false;
+            synchronized(c) {
+              c.beginDraw();
+              c.stroke(255, 255, 255);
+              c.line(a, b*h, a, b*h + h -1);
+              c.endDraw();
+            }
+            slp(20);
+            synchronized(c) {
+              c.beginDraw();
+              c.stroke(black);
+              c.line(a, b*h, a, b*h + h -1);
+              c.endDraw();
+            }
+          }
         }
       }
+    }
+    
+    void lightning() {
+      doFlash = true;
+      interrupt();
     }
     
     void quit() {
@@ -63,6 +88,10 @@ class Raindrops extends EquanPlugin {
         drops[i * d + j].start();
       }
     }
+  }
+  
+  synchronized void noteOn(int channel, int pitch, int velocity, int tentacleX, int tentacleZ) {
+    drops[tentacleX * d + tentacleZ].lightning();
   }
   
   synchronized void finish() {
