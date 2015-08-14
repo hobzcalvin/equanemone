@@ -6,6 +6,8 @@ class SimpleMidi extends EquanPlugin {
   char[][] hues;
   char[][] sats;
   
+  final float DECAY = 0.001;
+  
   public SimpleMidi(int wd, int ht, int dp) {
     super(wd, ht, dp);
     
@@ -33,9 +35,8 @@ class SimpleMidi extends EquanPlugin {
     // when it was last touched.
     for (int i = 0; i < w; i++) {
       for (int j = 0; j < d; j++) {
-        long when = touched[i][j];
         // Use hue/sat set in noteOn; brightness is based on how long ago it was last touched.
-        c.stroke(hues[i][j], sats[i][j], 10000.0/(millis-when));
+        c.stroke(hues[i][j], sats[i][j], 255.0 * cos(min(DECAY*(millis-touched[i][j]), PI/2)));
         // This draws the entire tentacle in the chosen stroke color.
         c.line(i, j*h, i, j*h+h-1);
       }

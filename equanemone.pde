@@ -68,7 +68,7 @@ I can play notes on vmpk, hear them in GarageBand, and see the plugin react
 to them in Processing. Neat!
 */
 
-final String MIDI_IN_PORT = "Port 1";
+final String MIDI_IN_PORT = "Teensy MIDI";
 
 // For now, we don't care about note-off events.
 final boolean MIDI_IGNORE_OFFS = true;
@@ -180,7 +180,7 @@ void setup() {
     cyl = makeCyl(CYL_DIA/2, CYL_DIA/2, CYL_HEIGHT, CYL_DETAIL);
   }
   
-  MidiBus.list();
+  //MidiBus.list();
   midiBus = new MidiBus(this, MIDI_IN_PORT, -1);
   
   lastTouched = new long[WIDTH][DEPTH];
