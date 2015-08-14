@@ -6,7 +6,7 @@ Equanemone is a three-dimensional LED display. This is a Processing project to c
 SETUP
 =====
 
-- Install Processing from processing.org
+- Install Processing 2.2.1, NOT 3.x, from processing.org
 - Clone this repository in your Processing Sketchbook folder, e.g. `~/Documents/Processing/` on OSX
 - Sketch > Import Library > Add Library
   - install PixelPusher by Jas Strong and Matt Stone
