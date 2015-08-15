@@ -22,7 +22,13 @@ class Fish extends EquanPlugin {
   int[] grabStart = new int[NUM_FISH];
   int[] grabSpace = new int[NUM_FISH];
   int[] grabY = new int[NUM_FISH];
-  int[] grabHeight = new int[NUM_FISH];
+  int[] grabHeight = new int[NUM_FISH]; 
+  
+  long[] bubbles;
+  
+  long nextBubbleMove;
+  // Milliseconds between bubble movement
+  final int BUBBLE_MS = 50;
 
   
   public Fish(int wd, int ht, int dp) {
@@ -32,12 +38,20 @@ class Fish extends EquanPlugin {
     
     c.colorMode(HSB, 1, 1, 1, 1);
     
+    bubbles = new long[w*d];
+    for (int i = 0; i < bubbles.length; i++) {
+      bubbles[i] = 0;
+    }
+    
+    
     // NEW STYLE: Preload/play all movies
     movs = new Movie[NUM_FISH];
     for (int i = 0; i < movs.length; i++) {
       movs[i] = new Movie(parent, files[i % files.length]);
       newFish(i);
     }
+    
+    nextBubbleMove = millis() + BUBBLE_MS;
   }
   
   synchronized void newFish(int i) {
@@ -87,10 +101,40 @@ class Fish extends EquanPlugin {
   }
   
   synchronized void draw() {
+    c.background(0);
+    
     for (int i = 0; i < movs.length; i++) {
       drawFish(i);
     }
-    println(frameRate);
+    
+    // Not sure if we should move bubbles consistently by milliseconds or just do them every draw() frame.
+    // They won't move consistently if moved on every draw(), but skipping a draw (which happens every 50 ms or so?) is worse.
+    boolean moveBubbles = true;//millis() >= nextBubbleMove ? (nextBubbleMove += BUBBLE_MS)>0 : false;
+    
+    c.loadPixels();
+    synchronized(bubbles) {
+      for (int i = 0; i < bubbles.length; i++) {
+        for (int j = 0; j < h; j++) {
+          if ((bubbles[i] & ((long)1 << j)) != 0) {
+            // Crazy math to translate to the 1-dimensional pixel space
+            c.pixels[i%w  +  (i/w) * w * h  +  w * (h-j-1)] = 0xFFFFFF;
+          }
+        }
+        if (moveBubbles) {
+          // Make bubbles float up
+          bubbles[i] <<= 1;
+        }
+      }
+    }
+    c.updatePixels();
+
+  }
+  
+  synchronized void noteOn(int channel, int pitch, int velocity, int tentacleX, int tentacleZ) {
+    synchronized(bubbles) {
+      // Create a bubble at the bottom of this tentacle
+      bubbles[tentacleX + tentacleZ*w] |= 1;
+    }
   }
   
   synchronized void finish() {
