@@ -23,6 +23,7 @@ Class[] plugins = {
   //TestEquan.class,
   //Noise.class,
   EchoVideo.class,
+  MidiBursts.class,
   UpDown.class,
   Fire.class,
   Sphere.class,
