@@ -111,13 +111,16 @@ class Fish extends EquanPlugin {
     // They won't move consistently if moved on every draw(), but skipping a draw (which happens every 50 ms or so?) is worse.
     boolean moveBubbles = true;//millis() >= nextBubbleMove ? (nextBubbleMove += BUBBLE_MS)>0 : false;
     
-    c.loadPixels();
+    //c.loadPixels();
+    c.stroke(0, 0, 1);
     synchronized(bubbles) {
       for (int i = 0; i < bubbles.length; i++) {
         for (int j = 0; j < h; j++) {
           if ((bubbles[i] & ((long)1 << j)) != 0) {
             // Crazy math to translate to the 1-dimensional pixel space
-            c.pixels[i%w  +  (i/w) * w * h  +  w * (h-j-1)] = 0xFFFFFF;
+            //c.pixels[i%w  +  (i/w) * w * h  +  w * (h-j-1)] = 0xFFFFFF;
+            // Less crazy math since working on pixels directly doesn't seem to work in the output
+            c.point(i%w, (i/w)*h -j+h-1);
           }
         }
         if (moveBubbles) {
@@ -126,7 +129,7 @@ class Fish extends EquanPlugin {
         }
       }
     }
-    c.updatePixels();
+    //c.updatePixels();
 
   }
   
