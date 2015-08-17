@@ -25,6 +25,7 @@ Class[] plugins = {
   EchoVideo.class,
   MidiBursts.class,
   UpDown.class,
+  Starfield.class,
   Fire.class,
   Sphere.class,
   SpinVideo.class,
