@@ -12,9 +12,15 @@ class Sphere extends EquanPlugin {
   
   float noiseOffset = 0;
   
+  float spreadNoise(float in) {
+    return (max(0.25, min(0.75, in)) - 0.25) * 2;
+  }
+  
   synchronized void draw() {
     float mult = THRESHOLD - FULL_CENTER;
-    float hue = noise(noiseOffset/10, noiseOffset, 100);
+    float hue = spreadNoise(noise(noiseOffset/10, noiseOffset, 100));
+    println(hue);
+    float sat = spreadNoise(noise(noiseOffset, noiseOffset/10, 100));
     c.image(bg, 0, 0);
     float x = noise(noiseOffset, 0, 0);
     float y = noise(0, noiseOffset, 0);
@@ -27,7 +33,7 @@ class Sphere extends EquanPlugin {
           if (dist < THRESHOLD) {
             dist -= FULL_CENTER;
             dist = (mult - dist) / mult;
-            c.stroke(hue, 1, pow(dist, 1));
+            c.stroke(hue, sat, pow(dist, 1));
             c.point(i, j*h + k);
           }
         }
