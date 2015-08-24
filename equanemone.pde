@@ -19,25 +19,22 @@ import themidibus.*;
 
 // List of plugins to cycle through, in order. Duplicates allowed.
 Class[] plugins = {
-
   KineticRain.class,
+  EchoVideo.class,
   Lava.class,
   Fireflies.class,
   
-  EchoVideo.class,
+  
   Fish.class,
   
   Planes.class,
   OneForAll.class,
+//  SimpleTest.class,
   SimpleMidi.class,
-
   //TestEquan.class,
   //Noise.class,
   EchoVideo.class,
-  SimpleMidi.class,
-  MidiBursts.class,
   UpDown.class,
-  Starfield.class,
   Fire.class,
   Sphere.class,
   SpinVideo.class,
@@ -62,16 +59,13 @@ final int NUM_STRIPS = 8; // "width"
 // Time a plugin fades in/out (if needsFadeIn is set true, the default)
 final int FADE_TIME = 1500;
 // Time to show each plugin if modeCycle is true
-final int PLUGIN_TIME = 30000;
+final int PLUGIN_TIME = 60000;
 // Cycle modes automatically (clicking always cycles modes)
-final boolean modeCycle = true;
+final boolean modeCycle = false;
 // Record PixelPusher output, usually to ~/canned.dat
 final boolean recording = false;
 // Instead of local simulator, send to a local OpenPixelControl server
 final boolean USE_OPC = false;
-
-final int OFF_HOUR = -1;
-final int OFF_MINUTE = -1;
 
 /*
 To get a quick and simple MIDI source:
@@ -288,8 +282,6 @@ void draw() {
   if (curPlugin == null ||
       (modeCycle && ms > startTime + PLUGIN_TIME + FADE_TIME) ||
       clicked) {
-    checkTimedExit();
-    
     clicked = true;
     try {
       if (curPlugin != null) {
@@ -354,25 +346,11 @@ void draw() {
   // Last bit of the hack.
   hint(ENABLE_DEPTH_TEST);
 
-
-  //println(frameRate, '.');
 }
 
 
 
-void checkTimedExit() {
-  // XXX: Won't handle midnight boundary nicely.
-  if (OFF_HOUR >= 0 && OFF_MINUTE >= 0) {
-    int off_minutes = OFF_HOUR*60 + OFF_MINUTE;
-    int cur_minutes = hour()*60 + minute();
-    // Exit if the time is equal to OFF_* or up to 5 minutes after
-    if (cur_minutes >= off_minutes && cur_minutes < off_minutes + 5) {
-      pasteCanvas(bg);
-      scrapeit();
-      exit();
-    }
-  }
-}
+
 
 
 
@@ -546,8 +524,7 @@ void scrapeit() {
     if (strips.size() != NUM_STRIPS) {
       println("strips.size() != NUM_STRIPS; "+strips.size()+" != "+NUM_STRIPS+"; THAT'S BAD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     }
-    //println(strips.size(), '!');
-    for (int i = 0; i < strips.size(); i++) {
+    for (int i = 0; i < NUM_STRIPS; i++) {
       Strip s = strips.get(i);
       for (int j = 0; j < STRANDS_PER_STRIP; j++) {
         for (int k = 0; k < PIX_PER_STRAND; k++) {

@@ -1,6 +1,8 @@
 import processing.video.*;
 
 import java.util.LinkedList;
+import java.util.Collections;
+//import java.util.List;
 
 class KineticRain extends EquanPlugin {
 
@@ -20,102 +22,79 @@ class KineticRain extends EquanPlugin {
     c.background(0, 0, 0);
     long[][] touched = getMidiLastTouched();
     long millis = millis();
+    
+    //make array of sine wave values to be accessed later      
+    float sineWave[];
+    int resolution = d*10;
+    sineWave = new float[resolution];
+    float angle = -2 * PI;
+    for (int j = 0; j < resolution; j++) {
+      sineWave[j] = sin(angle);
+      angle = angle + ((4*PI)/(resolution));
+    }
 
     for (int i = 0; i < w; i++) {
-      for (int j = 0; j < d; j++) {
-        float msSinceTouch = millis() - touched[i][j];
-        float sine;
-        if(msSinceTouch < 1000){
-          float mag = (1 - (msSinceTouch/1000));
-          println(mag);
-          sine = sin(mag*2*PI);
-          c.stroke(0, 255, 255);
-          c.point(i, h/2 + (sine*h/2) + j*h);
-        }
-        else {
-          sine = sin((float(i)/w)*2*PI);
-          c.stroke(0, 255, 255);
-          c.point(i, h/2 + (sine*h/2) + j*h);
-        }
-///change what im passing to sine to be in radian range, then offset with time.
-///get sin wavae that responds to one tentacle being pushed and then decays, then get sin waves that add or subtract based on other tentacles
-//        float min = min(l_max, r_max);
-//        float adjustment;
-//        if (min != 0) {
-//          adjustment = l_max + r_max / 2;
-//        } else {
-//          adjustment = max(l_max, r_max);
-//        }
-//        float sine;
-//        if (millis() - adjustment < 1000) {
-//          
-//          float msSinceRowTouch = millis() - adjustment;
-////          i*msSinceRowTouch
-//          sine = sin(i*msSinceRowTouch);
-//        }else {
-//          sine = sin(i);
-//        }
-//        c.stroke(0, 255, 255);
-//        c.point(i, h/2 + (sine*h/2) + j*h);
-//
-      }
-    }
-  }
-
       
+      int timeLimit = 2000;
+      float msSinceTouch = millis();
+      int leftLastTouchedIndex = 0;
+      int rightLastTouchedIndex = 0;
+      float leftMin = millis() - touched[i][0];
+      float rightMin = millis() - touched[i][d-1];
+     //get min of each row
+      for (int j = 1; j < d/2; j++) {
+        float newMsSinceTouch = millis() - touched[i][j];
+        if (newMsSinceTouch < leftMin) {
+          leftMin = newMsSinceTouch;
+          leftLastTouchedIndex = j;
+        }
+      } 
+      for (int j = d/2; j < d; j++){
+        float newMsSinceTouch = millis() - touched[i][j];
+        if (newMsSinceTouch < rightMin) {
+          rightMin = newMsSinceTouch;
+          rightLastTouchedIndex = j;
+        }
+      } 
+      if (leftMin > timeLimit) {
+        leftMin = -1;
+      }
+      if (rightMin > timeLimit) {
+        rightMin = -1;
+      }
+      for (int j = 0; j < d; j++) {
+          float rightMag = (1 - (rightMin)/(timeLimit)); 
+          float leftMag = (1 - (leftMin)/(timeLimit));
+          int leftSineWaveIndex = (abs(j-leftLastTouchedIndex)+(int(leftMin)/10))%resolution;
+          int rightSineWaveIndex = (abs((d-j)-rightLastTouchedIndex)+(int(rightMin)/10))%resolution;
+        if (leftMin > 0 && rightMin < 0) {  
+          float mag = leftMag; 
+          c.stroke(0, 0, 255);
+          c.point(i, h/2 + (sineWave[leftSineWaveIndex]*h/2*mag) + j*h); 
+        } else if (leftMin < 0 && rightMin > 0) {
+          float mag = rightMag; 
+          c.stroke(0, 255, 0);
+          c.point(i, h/2 + (sineWave[rightSineWaveIndex]*h/2*mag) + j*h);
+        } 
+        else if (leftMin > 0 && rightMin > 0){
+          float mag = (rightMag + leftMag) / 2;
+          c.stroke(255, 0, 0);
+          int sineWaveIndex = (leftSineWaveIndex + rightSineWaveIndex) / 2;
+          c.point(i, h/2 + (sineWave[sineWaveIndex]*h/2*mag) + j*h);
+        } else {
+          c.stroke(255, 0, 255);
+          c.point(i, h/2 + j*h);
+        }
+      }
+    }     
+  }
 }
+      
+
     
   
 
   
 
-//  synchronized void draw() {
-//    c.background(0, 0, 0);
-//    long[][] touched = getMidiLastTouched();
-//    long millis = millis();
-//    println(millis(), millis);
-//    for (int i = 0; i < w; i++) {
-//      for (int j = 0; j < d; j++) {
-//        long l_max = 0;
-//        long r_max = 0;
-//        for (int il = 0; il <= i; il++) {
-//          if (touched[il][j] > l_max) {
-//            l_max = touched[il][j];
-//          }
-//        }
-//        for (int ir = i+1; ir < w; ir++) {
-//          if (touched[ir][j] > r_max) {
-//            r_max = touched[ir][j];
-//          }
-//        }
-/////change what im passing to sine to be in radian range, then offset with time.
-/////get sin wavae that responds to one tentacle being pushed and then decays, then get sin waves that add or subtract based on other tentacles
-//        float min = min(l_max, r_max);
-//        float adjustment;
-//        if (min != 0) {
-//          adjustment = l_max + r_max / 2;
-//        } else {
-//          adjustment = max(l_max, r_max);
-//        }
-//        float sine;
-//        if (millis() - adjustment < 1000) {
-//          
-//          float msSinceRowTouch = millis() - adjustment;
-////          i*msSinceRowTouch
-//          sine = sin(i*msSinceRowTouch);
-//        }else {
-//          sine = sin(i);
-//        }
-//        c.stroke(0, 255, 255);
-//        c.point(i, h/2 + (sine*h/2) + j*h);
-//
-//      }
-//
-//      
-//    }
-//  
-//
-//  }
-  
-//}
+
 
