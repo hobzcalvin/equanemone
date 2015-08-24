@@ -19,6 +19,16 @@ import themidibus.*;
 
 // List of plugins to cycle through, in order. Duplicates allowed.
 Class[] plugins = {
+  KineticRain.class,
+  Lava.class,
+  Fireflies.class,
+  
+  EchoVideo.class,
+  Fish.class,
+  
+  Planes.class,
+  OneForAll.class,
+//  SimpleTest.class,
   SimpleMidi.class,
   //TestEquan.class,
   //Noise.class,
@@ -28,17 +38,17 @@ Class[] plugins = {
   Sphere.class,
   SpinVideo.class,
   Planes.class,
-  EchoVideo.class,
+  
   Raindrops.class,
   //NewYears.class,
   Terrain.class,
-  Fish.class,
+  
   Sweeps.class,
   SpinVideo.class,
-  Lava.class,
-  Fireflies.class,
+  
   //Leap.class,
-  //SimpleTest.class,
+  
+
 };
 
 final int PIX_PER_STRAND = 40; // "height"
