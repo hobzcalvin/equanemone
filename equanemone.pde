@@ -19,6 +19,7 @@ import themidibus.*;
 
 // List of plugins to cycle through, in order. Duplicates allowed.
 Class[] plugins = {
+  TennisBalls.class,
   KineticRain.class,
   EchoVideo.class,
   Lava.class,
