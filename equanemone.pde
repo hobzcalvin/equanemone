@@ -19,8 +19,10 @@ import themidibus.*;
 
 // List of plugins to cycle through, in order. Duplicates allowed.
 Class[] plugins = {
-  TennisBalls.class,
-  KineticRain.class,
+  MidiBursts.class,
+  MorePlanes.class,
+  //TennisBalls.class,
+  //KineticRain.class,
   EchoVideo.class,
   Lava.class,
   Fireflies.class,
@@ -28,14 +30,12 @@ Class[] plugins = {
   
   Fish.class,
   
-  Planes.class,
-  OneForAll.class,
+  //OneForAll.class,
 //  SimpleTest.class,
-  SimpleMidi.class,
+  //SimpleMidi.class,
   //TestEquan.class,
   //Noise.class,
   EchoVideo.class,
-  MidiBursts.class,
   UpDown.class,
   Fire.class,
   Sphere.class,
@@ -54,16 +54,20 @@ Class[] plugins = {
 
 };
 
-final int PIX_PER_STRAND = 40; // "height"
+final int PIX_PER_STRAND = 50; // "height"
 final int STRANDS_PER_STRIP = 8; // "depth" (if non-square, make this smaller than width)
 final int NUM_STRIPS = 8; // "width"
+// Hacky way to turn on two-pusher, half-strip mode. Set to 1 for normal mode.
+final int STRIP_DIVIDER = 2;
+// Each strand goes down and then up: first pixel is on top, last is below it, etc.
+final boolean SNAKE_MODE = true;
 
 // Time a plugin fades in/out (if needsFadeIn is set true, the default)
 final int FADE_TIME = 1500;
 // Time to show each plugin if modeCycle is true
 final int PLUGIN_TIME = 30000;
 // Cycle modes automatically (clicking always cycles modes)
-final boolean modeCycle = true;
+final boolean modeCycle = false;
 // Record PixelPusher output, usually to ~/canned.dat
 final boolean recording = false;
 // Instead of local simulator, send to a local OpenPixelControl server
@@ -456,7 +460,7 @@ LinkedList<MidiEvent> getRecentMidiEvents() {
 
 void noteOn(int channel, int pitch, int velocity) {
   if (pitch < WIDTH*DEPTH) {
-    new MidiEvent(channel, pitch, velocity, true, pitch % WIDTH, pitch / WIDTH);
+    new MidiEvent(channel, pitch, velocity, true, WIDTH - 1 - pitch % WIDTH, pitch / WIDTH);//pitch % WIDTH, pitch / WIDTH);
   } else {
     new MidiEvent(channel, pitch, velocity, true, -1, -1);
   }
@@ -466,7 +470,7 @@ void noteOff(int channel, int pitch, int velocity) {
     return;
   }
   if (pitch < WIDTH*DEPTH) {
-    new MidiEvent(channel, pitch, velocity, false, pitch % WIDTH, pitch / WIDTH);
+    new MidiEvent(channel, pitch, velocity, false, WIDTH - 1 - pitch % WIDTH, pitch / WIDTH);//pitch % WIDTH, pitch / WIDTH);
   } else {
     new MidiEvent(channel, pitch, velocity, false, -1, -1);
   }
@@ -532,6 +536,7 @@ void mouseMoved() {
   simulateMidi(true);
 }
 
+
 void scrapeit() {
   if (testObserver.hasStrips) {
     registry.startPushing();
@@ -539,25 +544,34 @@ void scrapeit() {
     
     if (recording) {
       List<PixelPusher> pushers = registry.getPushers();
-      pushers.get(0).startRecording("canned.dat");
+      //pushers.get(0).startRecording("canned.dat");
+      for (int i = 0; i < pushers.size(); i++) {
+        pushers.get(i).startRecording("canned"+i+".dat");
+      }
     }
     
-    if (strips.size() != NUM_STRIPS) {
-      println("strips.size() != NUM_STRIPS; "+strips.size()+" != "+NUM_STRIPS+"; THAT'S BAD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
+    if (strips.size() != NUM_STRIPS * STRIP_DIVIDER) {
+      println("strips.size() != NUM_STRIPS; "+strips.size()+" != "+NUM_STRIPS+"*"+STRIP_DIVIDER+"; THAT'S BAD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
     }
+    
     //println(strips.size(), '!');
+    
     for (int i = 0; i < strips.size(); i++) {
       Strip s = strips.get(i);
-      for (int j = 0; j < STRANDS_PER_STRIP; j++) {
+      // XXX: Hack for now; what's the real best logic?
+      //int curDivider = i >= NUM_STRIPS ? 2 : 1;
+      int curDivider = i / NUM_STRIPS + 1;
+      println("curDiv "+curDivider+", "+i+", "+strips.size()+", "+NUM_STRIPS+", "+STRIP_DIVIDER);
+      for (int j = 0; j < STRANDS_PER_STRIP / STRIP_DIVIDER; j++) {
         for (int k = 0; k < PIX_PER_STRAND; k++) {
           color c;
           if (SPHERE) {
             c = get(i*STRANDS_PER_STRIP + j, k);
           } else {
             //c = get(i, k + j*PIX_PER_STRAND);
-            c = get(j, k + i*PIX_PER_STRAND);
+            c = get(j + STRANDS_PER_STRIP * (curDivider-1), (SNAKE_MODE ? (k >= PIX_PER_STRAND / 2 ? (PIX_PER_STRAND - k)*2 - 1 : k*2) : k) + i * PIX_PER_STRAND / curDivider);
           }
-          s.setPixel(c, k + (STRANDS_PER_STRIP-1-j)*PIX_PER_STRAND);
+          s.setPixel(c, k + (STRANDS_PER_STRIP/STRIP_DIVIDER - 1 - j)*PIX_PER_STRAND);
         }
       }
     }

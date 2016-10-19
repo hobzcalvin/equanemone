@@ -19,7 +19,7 @@ class Sphere extends EquanPlugin {
   synchronized void draw() {
     float mult = THRESHOLD - FULL_CENTER;
     float hue = spreadNoise(noise(noiseOffset/10, noiseOffset, 100));
-    println(hue);
+    //println(hue);
     float sat = spreadNoise(noise(noiseOffset, noiseOffset/10, 100));
     c.image(bg, 0, 0);
     float x = noise(noiseOffset, 0, 0);

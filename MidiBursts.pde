@@ -7,7 +7,7 @@ class MidiBursts extends EquanPlugin {
   // Bursts this time apart or greater from same tentacle should be fully saturated (BURST_DELAY between bursts = no saturation)
   final long SATURATED_DELAY = 8*BURST_DELAY;
   // Max simultaneous bursts allowed (we can only process so many)
-  final int MAX_BURSTS = 10;
+  final int MAX_BURSTS = 5;
   long lastBursted[][];
   
   LinkedList<Burst> bursts;
@@ -73,6 +73,10 @@ class MidiBursts extends EquanPlugin {
   synchronized void draw() {
     //println(frameRate);
     c.background(0);
+    
+    if (random(frameRate) < 1.0) {
+      noteOn(0, 0, 0, int(random(w)), int(random(d)));
+    }
     
     long millis = millis();
     
