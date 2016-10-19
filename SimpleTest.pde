@@ -17,17 +17,21 @@ class SimpleTest extends EquanPlugin {
       curColor = (curColor + 1) % 4;
 
       if (curColor == 0) {
-        c.background(0, 0, 0);
+        doit(0, 0, 0);
       } else if (curColor == 1) {
-        c.background(255, 0, 0);
+        doit(255, 0, 0);
       } else if (curColor == 2) {
-        c.background(0, 255, 0);
+        doit(0, 255, 0);
       } else {
-        c.background(0, 0, 255);
+        doit(0, 0, 255);
       }
       
       nextMove = millis() + SPEED;
     }
   }
-  
+  void doit(int r, int g, int b) {
+    c.background(r, g, b);
+  }  
 }
+
+
