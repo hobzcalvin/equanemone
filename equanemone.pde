@@ -19,7 +19,9 @@ import themidibus.*;
 
 // List of plugins to cycle through, in order. Duplicates allowed.
 Class[] plugins = {
+  RainbowGoo.class,
   MidiBursts.class,
+  Starfield.class,
   MorePlanes.class,
   //TennisBalls.class,
   //KineticRain.class,
@@ -460,6 +462,7 @@ LinkedList<MidiEvent> getRecentMidiEvents() {
 
 void noteOn(int channel, int pitch, int velocity) {
   if (pitch < WIDTH*DEPTH) {
+    //println("on", WIDTH - 1 - pitch % WIDTH, pitch / WIDTH);
     new MidiEvent(channel, pitch, velocity, true, WIDTH - 1 - pitch % WIDTH, pitch / WIDTH);//pitch % WIDTH, pitch / WIDTH);
   } else {
     new MidiEvent(channel, pitch, velocity, true, -1, -1);
@@ -503,7 +506,7 @@ void noteOff(int channel, int pitch, int velocity) {
 
 int midiSimSize = 4;
 int midiSimSpacing = 10;
-int midiSimFingerSize = 40;
+int midiSimFingerSize = 8;
 void simulateMidi(boolean moved) {
   fill(255, 255, 255, 0.5);
   noStroke();
@@ -537,7 +540,11 @@ void mouseMoved() {
 }
 
 
+// Indexed like: stripPixelXY[strip][pixel][0 for x on canvas, 1 for y]
+int[][][] stripPixelXY = null;
+
 void scrapeit() {
+
   if (testObserver.hasStrips) {
     registry.startPushing();
     List<Strip> strips = registry.getStrips();
@@ -550,20 +557,61 @@ void scrapeit() {
       }
     }
     
-    if (strips.size() != NUM_STRIPS * STRIP_DIVIDER) {
+    if (stripPixelXY == null || stripPixelXY.length != strips.size()) {
+      // Build the map (as expensively as you like!)
+      stripPixelXY = new int[strips.size()][][];
+      for (int i = 0; i < stripPixelXY.length; i++) {
+        stripPixelXY[i] = new int[STRANDS_PER_STRIP/STRIP_DIVIDER*PIX_PER_STRAND][];
+        int xStart = i < 8 ? 4 : 0;
+        int yStart = (i%8) * PIX_PER_STRAND;
+        for (int j = 0; j < stripPixelXY[i].length; j++) {
+          stripPixelXY[i][j] = new int[2];
+          int planeX = xStart + j / PIX_PER_STRAND;
+          int planeY = j % PIX_PER_STRAND;
+          if (SNAKE_MODE) {
+            planeY = planeY >= PIX_PER_STRAND / 2 ? (PIX_PER_STRAND - planeY)*2 - 1 : 2*planeY;
+          }
+          stripPixelXY[i][j][0] = planeX;
+          stripPixelXY[i][j][1] = yStart + planeY;
+        }
+      }
+      /*
+      println("built array");
+      for (int i = 0; i < stripPixelXY.length; i++) {
+        String s = "";
+        for (int j = 0; j < stripPixelXY[i].length; j++) {
+          s += Arrays.toString(stripPixelXY[i][j]);
+          if (j % PIX_PER_STRAND == PIX_PER_STRAND - 1) {
+            s += "\n    ";
+          }
+        }
+        println(i, ":", s);
+      }
+      */
+    }    
+    /*if (strips.size() != NUM_STRIPS * STRIP_DIVIDER) {
       println("strips.size() != NUM_STRIPS; "+strips.size()+" != "+NUM_STRIPS+"*"+STRIP_DIVIDER+"; THAT'S BAD!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
-    }
+    }*/
     
+
     //println(strips.size(), '!');
     
     for (int i = 0; i < strips.size(); i++) {
       Strip s = strips.get(i);
+      
+      for (int j = 0; j < stripPixelXY[i].length; j++) {
+        s.setPixel(get(stripPixelXY[i][j][0], stripPixelXY[i][j][1]), j);
+      }
+      
+      
+      /*
       // XXX: Hack for now; what's the real best logic?
       //int curDivider = i >= NUM_STRIPS ? 2 : 1;
       int curDivider = i / NUM_STRIPS + 1;
       println("curDiv "+curDivider+", "+i+", "+strips.size()+", "+NUM_STRIPS+", "+STRIP_DIVIDER);
       for (int j = 0; j < STRANDS_PER_STRIP / STRIP_DIVIDER; j++) {
         for (int k = 0; k < PIX_PER_STRAND; k++) {
+          
           color c;
           if (SPHERE) {
             c = get(i*STRANDS_PER_STRIP + j, k);
@@ -572,8 +620,10 @@ void scrapeit() {
             c = get(j + STRANDS_PER_STRIP * (curDivider-1), (SNAKE_MODE ? (k >= PIX_PER_STRAND / 2 ? (PIX_PER_STRAND - k)*2 - 1 : k*2) : k) + i * PIX_PER_STRAND / curDivider);
           }
           s.setPixel(c, k + (STRANDS_PER_STRIP/STRIP_DIVIDER - 1 - j)*PIX_PER_STRAND);
+          
         }
       }
+      */
     }
   } else if (curPlugin != null) {
     
