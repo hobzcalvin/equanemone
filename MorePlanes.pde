@@ -111,7 +111,7 @@ class MorePlanes extends EquanPlugin {
       }
     } while (!satisfied);
     for (int i = 0; i < planes.length; i++) {
-      planes[i] = new Plane((new Vec3D(planes[i].x, planes[i].y, planes[i].z)).add(addVector), planes[i].normal.rotateY(0.1));
+      planes[i] = new Plane((new Vec3D(planes[i].x, planes[i].y, planes[i].z)).add(addVector), planes[i].normal.rotateY(0.0001 * frameRate ));
       //planes[i].add(addVector);
       //planes[i].rotateY(0.01);
     }
