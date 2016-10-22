@@ -67,9 +67,9 @@ final boolean SNAKE_MODE = true;
 // Time a plugin fades in/out (if needsFadeIn is set true, the default)
 final int FADE_TIME = 1500;
 // Time to show each plugin if modeCycle is true
-final int PLUGIN_TIME = 30000;
+final int PLUGIN_TIME = 60000;
 // Cycle modes automatically (clicking always cycles modes)
-final boolean modeCycle = false;
+final boolean modeCycle = true;
 // Record PixelPusher output, usually to ~/canned.dat
 final boolean recording = false;
 // Instead of local simulator, send to a local OpenPixelControl server
