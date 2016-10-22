@@ -70,8 +70,8 @@ final int FADE_TIME = 1500;
 final int PLUGIN_TIME = 60000;
 // Cycle modes automatically (clicking always cycles modes)
 final boolean modeCycle = true;
-// Record PixelPusher output, usually to ~/canned.dat
-final boolean recording = false;
+// Recording starts when this number of pushers are detected, to ~/canned{N}.dat, or never if zero.
+final int NUM_RECORDING = 0;
 // Instead of local simulator, send to a local OpenPixelControl server
 final boolean USE_OPC = false;
 
@@ -138,7 +138,8 @@ Img2Opc i2o;
 PGraphics bg;
 EquanPlugin curPlugin;
 int nextPluginIndex = 0;
-int numRecords = 0;
+// -1 if no recording started; otherwise number of completed loops through the plugins array
+int numRecords = -1;
 long startTime;
 
 PShape cyl;
@@ -283,7 +284,9 @@ void draw() {
 
   long ms = millis();
   
-  if (curPlugin == null && ms < startTime + 100) {
+  if ((curPlugin == null && ms < startTime + 100) ||
+      // Also wait to load first plugin if we want to record but haven't started yet
+      (NUM_RECORDING > 0 && numRecords < 0)) {
     // Stupid pause to avoid opening hiccups
     pasteCanvas(bg);
     scrapeit();
@@ -300,7 +303,7 @@ void draw() {
       if (curPlugin != null) {
         curPlugin.finish();
       }
-      if (recording && curPlugin != null && nextPluginIndex == 0) {
+      if (numRecords > 0 && curPlugin != null && nextPluginIndex == 0) {
         if (numRecords++ == 5) {
           // Full loop: stop
           exit();
@@ -549,11 +552,14 @@ void scrapeit() {
     registry.startPushing();
     List<Strip> strips = registry.getStrips();
     
-    if (recording) {
+    if (NUM_RECORDING > 0 && numRecords < 0) {
       List<PixelPusher> pushers = registry.getPushers();
       //pushers.get(0).startRecording("canned.dat");
-      for (int i = 0; i < pushers.size(); i++) {
-        pushers.get(i).startRecording("canned"+i+".dat");
+      if (pushers.size() == NUM_RECORDING) {
+        for (int i = 0; i < pushers.size(); i++) {
+          pushers.get(i).startRecording("canned"+i+".dat");
+        }
+        numRecords = 0;
       }
     }
     
